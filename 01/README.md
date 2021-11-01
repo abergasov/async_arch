@@ -72,11 +72,11 @@ event: DailyMessageSendEvent, BalanceCalculatedEvent
 ```
 
 ### Модель данных и домены
-![img.png](img.png)
+![img_2.png](img_2.png)
 > Модель данных
 
-![img_1.png](img_1.png)
+![img_4.png](img_4.png)
 > Список доменов
 
 ### Сервисы системы
-![img_2.png](img_2.png)
+![img_3.png](img_3.png)
