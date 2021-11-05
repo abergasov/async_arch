@@ -24,5 +24,8 @@ func (ar *AuthAppRouter) InitRoutes() *echo.Echo {
 	ar.httpEngine.GET("/", func(c echo.Context) error {
 		return c.JSON(http.StatusOK, map[string]bool{"ok": true})
 	})
+	ar.httpEngine.POST("/api/auth/awdawd", func(c echo.Context) error {
+		return c.JSON(http.StatusOK, map[string]bool{"ok": true})
+	})
 	return ar.httpEngine
 }
