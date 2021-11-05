@@ -1,0 +1,17 @@
+version: '3'
+
+services:
+
+  authDB:
+    image: postgres:14.0
+    env_file:
+      - configs/common.env
+    container_name: arch_auth_db.sh
+    restart: always
+    tty: true
+    ports:
+      - 4666:5432
+    volumes:
+      - ./scripts/schema.sql:/docker-entrypoint-initdb.d/1.sql
+    networks:
+      - app-network

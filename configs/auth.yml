@@ -1,0 +1,9 @@
+conf_db:
+  address: 127.0.0.1
+  port: 4666
+  user: user
+  pass: password
+  db_name: arch_auth_db
+  max_connections: 10
+  read_timeout: 1
+  write_timeout: 1
