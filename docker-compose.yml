@@ -15,3 +15,7 @@ services:
       - ./scripts/schema.sql:/docker-entrypoint-initdb.d/1.sql
     networks:
       - app-network
+
+networks:
+  app-network:
+    driver: bridge

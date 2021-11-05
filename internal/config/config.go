@@ -1,16 +1,18 @@
 package config
 
 import (
-	"errors"
-	"log"
 	"os"
 	"path/filepath"
 	"time"
 
+	"async_arch/internal/logger"
+
+	"go.uber.org/zap"
 	"gopkg.in/yaml.v2"
 )
 
 type AppConfig struct {
+	AppPort  string `yaml:"app_port"`
 	ConfigDB DBConf `yaml:"conf_db"`
 }
 
@@ -25,24 +27,24 @@ type DBConf struct {
 	WriteTimeout   time.Duration `yaml:"write_timeout"`
 }
 
-func InitConf(confFile string) (cfg *AppConfig, err error) {
-	log.Println("Try read config from file", "path", confFile)
+func InitConf(confFile string) (cfg *AppConfig) {
+	logger.Info("Try read config from file", zap.String("path", confFile))
 	file, err := os.Open(filepath.Clean(confFile))
 	if err != nil {
-		return nil, errors.New("Error open file:" + err.Error())
+		logger.Fatal("Error open config file", err)
 	}
 	defer func() {
 		if e := file.Close(); e != nil {
-			log.Fatal("Error close config file", e)
+			logger.Fatal("Error close config file", e)
 		}
 	}()
 
 	decoder := yaml.NewDecoder(file)
 	err = decoder.Decode(&cfg)
 	if err != nil {
-		return nil, errors.New("Invalid config file:" + err.Error())
+		logger.Fatal("Invalid config file", err)
 	}
 
-	log.Println("Config ok", "path", confFile)
+	logger.Info("Config ok")
 	return
 }
