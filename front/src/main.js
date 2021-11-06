@@ -1,8 +1,10 @@
 import { createApp } from 'vue'
 import App from './App.vue'
 import axios from 'axios';
+import store from "./store";
 
-const app = createApp(App)
+const app = createApp(App);
+app.use(store);
 
 app.config.globalProperties.askBackend = (url, param) => {
     let config = {
@@ -20,7 +22,7 @@ app.config.globalProperties.askBackend = (url, param) => {
                 let message = ''
                 switch (code) {
                     case 401:
-                        //this.$store.commit('setAuth', 0);
+                        this.$store.commit('setAuth', 0);
                         message = 'Unauthorized';
                         break;
                     case 409:

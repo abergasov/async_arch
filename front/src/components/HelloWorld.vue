@@ -16,7 +16,7 @@ export default {
   },
   methods: {
     clickIT() {
-      console.log("123123");
+      this.$store.commit('setAuth', 1);
       this.askBackend("auth/awdawd", {})
     },
   }
