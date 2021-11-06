@@ -5,6 +5,8 @@ const store = createStore({
     state () {
         return {
             auth: 0,
+            init_done: false,
+            key: localStorage.getItem('key'),
         }
     },
     mutations: {
@@ -13,6 +15,13 @@ const store = createStore({
         },
         setAuth (state, payload) {
             state.auth = payload;
+        },
+        setJWT (state, payload) {
+            localStorage.setItem('key', payload);
+            state.key = payload;
+        },
+        initDone (state) {
+            state.init_done = true;
         },
     }
 })

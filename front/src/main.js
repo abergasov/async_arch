@@ -2,9 +2,12 @@ import { createApp } from 'vue'
 import App from './App.vue'
 import axios from 'axios';
 import store from "./store";
+import Vant from 'vant';
+import 'vant/lib/index.css';
 
 const app = createApp(App);
 app.use(store);
+app.use(Vant);
 
 app.config.globalProperties.askBackend = (url, param) => {
     let config = {
@@ -13,7 +16,7 @@ app.config.globalProperties.askBackend = (url, param) => {
         }
     }
     return new Promise((resolve, reject) => {
-        axios.post(`/api/${url}`, param, config)
+        axios.post(`/api/v1/${url}`, param, config)
             .then(resp => {
                 resolve(resp.data)
             })
