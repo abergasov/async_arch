@@ -13,6 +13,7 @@ import (
 type UserRepo interface {
 	GetUserByMail(email string) (usr *entities.UserAccount, err error)
 	AddUser(googleUser *entities.GoogleUser, userRole string) error
+	GetUserByPublicID(publicID uuid.UUID, version int) (*entities.UserAccount, error)
 }
 
 type User struct {
@@ -49,6 +50,13 @@ func (u *User) AddUser(googleUser *entities.GoogleUser, userRole string) error {
 		return err
 	}
 	return nil
+}
+
+func (u *User) GetUserByPublicID(publicID uuid.UUID, version int) (*entities.UserAccount, error) {
+	sqlS := "SELECT user_id, public_id, user_mail, user_name, user_version, user_role, user_role FROM users WHERE public_id = $1 AND user_version = $2"
+	var usr entities.UserAccount
+	err := u.conn.Client().QueryRowx(sqlS, publicID, version).StructScan(&usr)
+	return &usr, err
 }
 
 func (u *User) UpdateUser(account entities.UserAccount) error {

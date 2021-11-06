@@ -28,7 +28,7 @@ create table one_time_key
     key_id uuid
         constraint one_time_key_pk
             primary key,
-    key_val varchar(255),
+    key_val text,
     expires timestamp
 );
 

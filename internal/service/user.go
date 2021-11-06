@@ -1,9 +1,15 @@
 package service
 
 import (
+	"time"
+
 	"async_arch/internal/entities"
 	"async_arch/internal/logger"
 	"async_arch/internal/repository/user"
+
+	"github.com/google/uuid"
+
+	"github.com/golang-jwt/jwt"
 )
 
 const (
@@ -12,11 +18,12 @@ const (
 )
 
 type UserService struct {
-	uRepo user.UserRepo
+	uRepo  user.UserRepo
+	jwtKey []byte
 }
 
-func InitUserService(uRepo user.UserRepo) *UserService {
-	return &UserService{uRepo: uRepo}
+func InitUserService(uRepo user.UserRepo, jwtKey string) *UserService {
+	return &UserService{uRepo: uRepo, jwtKey: []byte(jwtKey)}
 }
 
 func (u *UserService) Login(googleUser *entities.GoogleUser) (string, error) {
@@ -29,9 +36,14 @@ func (u *UserService) Login(googleUser *entities.GoogleUser) (string, error) {
 		if err = u.registerUser(googleUser); err != nil {
 			return "", err
 		}
+		usr, err = u.uRepo.GetUserByMail(googleUser.Email)
+		if err != nil {
+			logger.Error("error load user by mail after creation", err)
+			return "", err
+		}
 	}
 	//user exist or created, generate jwt
-	return "132312", nil
+	return u.generateJWT(usr)
 }
 
 func (u *UserService) registerUser(googleUser *entities.GoogleUser) error {
@@ -40,4 +52,25 @@ func (u *UserService) registerUser(googleUser *entities.GoogleUser) error {
 		return err
 	}
 	return nil
+}
+
+func (u *UserService) generateJWT(usr *entities.UserAccount) (string, error) {
+	atClaims := entities.UserJWT{
+		usr.PublicID,
+		usr.Version,
+		jwt.StandardClaims{
+			ExpiresAt: time.Now().Add(100 * time.Hour).Unix(),
+		},
+	}
+	at := jwt.NewWithClaims(jwt.SigningMethodHS512, atClaims)
+	jwtKey, err := at.SignedString(u.jwtKey)
+	if err != nil {
+		logger.Error("error generate jwt", err)
+		return "", err
+	}
+	return jwtKey, nil
+}
+
+func (u *UserService) GetUserInfo(publicID uuid.UUID, userVersion int) (*entities.UserAccount, error) {
+	return u.uRepo.GetUserByPublicID(publicID, userVersion)
 }

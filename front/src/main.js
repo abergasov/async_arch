@@ -4,6 +4,7 @@ import axios from 'axios';
 import store from "./store";
 import Vant from 'vant';
 import 'vant/lib/index.css';
+import {useStore} from "vuex";
 
 const app = createApp(App);
 app.use(store);
@@ -12,7 +13,7 @@ app.use(Vant);
 app.config.globalProperties.askBackend = (url, param) => {
     let config = {
         headers: {
-            m: window.userId,
+            Authorization: "Bearer " + store.state.key,
         }
     }
     return new Promise((resolve, reject) => {
@@ -25,7 +26,7 @@ app.config.globalProperties.askBackend = (url, param) => {
                 let message = ''
                 switch (code) {
                     case 401:
-                        this.$store.commit('setAuth', 0);
+                        store.commit('setAuth', 0);
                         message = 'Unauthorized';
                         break;
                     case 409:

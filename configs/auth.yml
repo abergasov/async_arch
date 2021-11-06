@@ -1,6 +1,7 @@
 google_app_secret: 123123
 google_app_id: 123123
 app_host: http://localhost
+jwt_key: akjlehyuiAUSDh2
 app_port: 8090
 conf_db:
   address: 127.0.0.1

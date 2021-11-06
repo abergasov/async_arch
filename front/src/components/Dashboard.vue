@@ -1,5 +1,9 @@
 <template>
-  <h1>{{ msg }}</h1>
+  <h1>Das is dashboard</h1>
+  <h4>ID: {{ user.public_id }}</h4>
+  <h4>Email: {{ user.email }}</h4>
+  <h4>User name: {{ user.name }}</h4>
+  <h4>Role: {{ user.role }}</h4>
   <p>
     <button @click="clickIT">awdawdw</button>
   </p>
@@ -7,7 +11,10 @@
 
 <script>
 export default {
-  name: "HelloWorld",
+  name: "Dashboard",
+  props: {
+    user: Object,
+  },
   data() {
     return {
       msg: "awdwad",

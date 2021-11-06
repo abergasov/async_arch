@@ -25,11 +25,11 @@ func main() {
 	conf := config.InitConf(*confFile)
 	conn := database.InitDBConnect(&conf.ConfigDB)
 	userRepo := user.InitUserRepo(conn)
-	userService := service.InitUserService(userRepo)
+	userService := service.InitUserService(userRepo, conf.JWTKey)
 	exc := exchanger.InitExchanger(conn) // exchange uuid to jwt
 	router := auth_routes.InitAuthAppRouter(conf, userService, exc)
 	logger.Info("start auth app", zap.String("url", conf.AppHost+":"+conf.AppPort))
-	if err := router.InitRoutes().Start(":" + conf.AppPort); err != nil {
+	if err := router.InitRoutes(conf.JWTKey).Start(":" + conf.AppPort); err != nil {
 		logger.Fatal("Common server error", err)
 	}
 

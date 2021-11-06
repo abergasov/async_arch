@@ -16,6 +16,7 @@ type AppConfig struct {
 	AppHost         string `yaml:"app_host"`
 	GoogleAppSecret string `yaml:"google_app_secret"`
 	GoogleAppID     string `yaml:"google_app_id"`
+	JWTKey          string `yaml:"jwt_key"`
 	ConfigDB        DBConf `yaml:"conf_db"`
 }
 
