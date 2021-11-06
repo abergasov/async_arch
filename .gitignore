@@ -1,3 +1,4 @@
 .idea/*
 vendor/*
 front/node_modules/*
+configs/auth.yml.sample

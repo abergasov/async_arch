@@ -12,8 +12,11 @@ import (
 )
 
 type AppConfig struct {
-	AppPort  string `yaml:"app_port"`
-	ConfigDB DBConf `yaml:"conf_db"`
+	AppPort         string `yaml:"app_port"`
+	AppHost         string `yaml:"app_host"`
+	GoogleAppSecret string `yaml:"google_app_secret"`
+	GoogleAppID     string `yaml:"google_app_id"`
+	ConfigDB        DBConf `yaml:"conf_db"`
 }
 
 type DBConf struct {
