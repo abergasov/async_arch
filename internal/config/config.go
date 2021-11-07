@@ -12,12 +12,17 @@ import (
 )
 
 type AppConfig struct {
-	AppPort         string `yaml:"app_port"`
-	AppHost         string `yaml:"app_host"`
-	GoogleAppSecret string `yaml:"google_app_secret"`
-	GoogleAppID     string `yaml:"google_app_id"`
-	JWTKey          string `yaml:"jwt_key"`
-	ConfigDB        DBConf `yaml:"conf_db"`
+	AppPort         string     `yaml:"app_port"`
+	AppHost         string     `yaml:"app_host"`
+	GoogleAppSecret string     `yaml:"google_app_secret"`
+	GoogleAppID     string     `yaml:"google_app_id"`
+	JWTKey          string     `yaml:"jwt_key"`
+	ConfigDB        DBConf     `yaml:"conf_db"`
+	ConfigBroker    BrokerConf `yaml:"conf_broker"`
+}
+
+type BrokerConf struct {
+	Address string `yaml:"address"`
 }
 
 type DBConf struct {

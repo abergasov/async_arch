@@ -1,11 +1,15 @@
 package service
 
 import (
+	"context"
+	"encoding/json"
 	"time"
 
 	"async_arch/internal/entities"
 	"async_arch/internal/logger"
 	"async_arch/internal/repository/user"
+
+	"github.com/segmentio/kafka-go"
 
 	"github.com/google/uuid"
 
@@ -13,17 +17,19 @@ import (
 )
 
 const (
-	Worker    = "worker"
-	AdminRole = "admin"
+	BrokerTopic = "userCUD"
+	Worker      = "worker"
+	AdminRole   = "admin"
 )
 
 type UserService struct {
 	uRepo  user.UserRepo
 	jwtKey []byte
+	broker *kafka.Writer
 }
 
-func InitUserService(uRepo user.UserRepo, jwtKey string) *UserService {
-	return &UserService{uRepo: uRepo, jwtKey: []byte(jwtKey)}
+func InitUserService(uRepo user.UserRepo, kfk *kafka.Writer, jwtKey string) *UserService {
+	return &UserService{uRepo: uRepo, jwtKey: []byte(jwtKey), broker: kfk}
 }
 
 func (u *UserService) Login(googleUser *entities.GoogleUser) (string, error) {
@@ -39,6 +45,14 @@ func (u *UserService) Login(googleUser *entities.GoogleUser) (string, error) {
 		usr, err = u.uRepo.GetUserByMail(googleUser.Email)
 		if err != nil {
 			logger.Error("error load user by mail after creation", err)
+			return "", err
+		}
+		b, _ := json.Marshal(usr)
+		if err = u.broker.WriteMessages(context.Background(), kafka.Message{
+			Key:   []byte("UserCreated"),
+			Value: b,
+		}); err != nil {
+			logger.Error("error stream event", err)
 			return "", err
 		}
 	}
