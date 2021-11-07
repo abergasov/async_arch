@@ -35,7 +35,10 @@ create table tasks
     description text,
     assign_cost int,
     done_cost int,
-    status varchar(10)
+    status varchar(10),
+    created_at timestamp,
+    assigned_to uuid,
+    assigned_at timestamp
 );
 
 create index tasks_author_index
@@ -43,3 +46,9 @@ create index tasks_author_index
 
 create index tasks_public_id_index
     on tasks (public_id);
+
+create index tasks_created_at_index
+    on tasks (created_at);
+
+create index tasks_assigned_to_index
+    on tasks (assigned_to);

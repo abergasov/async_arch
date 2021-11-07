@@ -39,6 +39,7 @@ func (ar *TaskAppRouter) InitRoutes(jwtKey string) *echo.Echo {
 			SigningMethod: jwt.SigningMethodHS512.Name,
 		}))
 		userData.POST("create", ar.createTask)
+		userData.POST("list", ar.getTaskList)
 	}
 	return ar.httpEngine
 }

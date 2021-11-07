@@ -33,7 +33,7 @@ func main() {
 	task.InitUserTaskService(userRepo, kfk, conf.JWTKey)
 
 	brokerKfk := broker.InitKafkaProducer(&conf.ConfigBroker, entities.TaskCUDBrokerTopic)
-	taskService := task.InitTaskManager(taskRepo, brokerKfk)
+	taskService := task.InitTaskManager(taskRepo, userRepo, brokerKfk)
 	router := task_routes.InitAuthAppRouter(conf, taskService)
 	logger.Info("start auth app", zap.String("url", conf.AppHost+":"+conf.AppPort))
 	if err := router.InitRoutes(conf.JWTKey).Start(":" + conf.AppPort); err != nil {

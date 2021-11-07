@@ -44,6 +44,18 @@
           </el-card>
         </el-col>
       </el-row>
+      <el-row :gutter="20">
+        <el-col :span="24">
+          <el-card class="box-card">
+            <el-table :data="tasks" style="width: 100%">
+              <el-table-column prop="public_id" label="public_id" width="280" />
+              <el-table-column prop="title" label="title" width="180" />
+              <el-table-column prop="created_at" label="created_at" />
+              <el-table-column prop="status" label="status" />
+            </el-table>
+          </el-card>
+        </el-col>
+      </el-row>
     </el-main>
   </el-container>
 
@@ -54,6 +66,7 @@ export default {
   name: "Dashboard",
   props: {
     user: Object,
+    tasks: Array,
   },
   data() {
     return {

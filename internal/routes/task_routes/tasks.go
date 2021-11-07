@@ -19,6 +19,9 @@ func (ar *TaskAppRouter) createTask(c echo.Context) error {
 	if err := c.Bind(&t); err != nil {
 		return c.JSON(http.StatusBadRequest, entities.ErrorRequest{})
 	}
+	if t.Task.Title == "" || t.Task.Desc == "" {
+		return c.JSON(http.StatusBadRequest, entities.ErrorRequest{})
+	}
 	user, _ := c.Get("user").(*jwt.Token)
 	claims, _ := user.Claims.(*entities.UserJWT)
 	newTask, err := ar.tManager.CreateTask(claims.UserID, t.Task.Title, t.Task.Title)
@@ -26,4 +29,14 @@ func (ar *TaskAppRouter) createTask(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, entities.ErrorRequest{})
 	}
 	return c.JSON(http.StatusOK, map[string]interface{}{"ok": true, "data": newTask})
+}
+
+func (ar *TaskAppRouter) getTaskList(c echo.Context) error {
+	user, _ := c.Get("user").(*jwt.Token)
+	claims, _ := user.Claims.(*entities.UserJWT)
+	tasks, err := ar.tManager.LoadTasks(claims.UserID, claims.UserVersion)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, entities.ErrorRequest{})
+	}
+	return c.JSON(http.StatusOK, map[string]interface{}{"ok": true, "data": tasks})
 }

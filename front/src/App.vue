@@ -2,7 +2,7 @@
   <el-skeleton v-if="!initDone" :row="20" />
   <div v-else>
     <Auth v-if="!auth"/>
-    <Dashboard v-else :user="user" v-on:change_role="changeRole" v-on:create_task="createTask"/>
+    <Dashboard v-else :user="user" :tasks="tasks" v-on:change_role="changeRole" v-on:create_task="createTask"/>
   </div>
 </template>
 
@@ -20,6 +20,7 @@ const store = useStore()
 const auth = computed(() => +store.state.auth === 1)
 const initDone = computed(() => store.state.init_done)
 const user = ref({})
+const tasks = ref([])
 
 const changeRole = (payload) => {
   askBackend("auth/change_role", payload).then(
@@ -43,11 +44,25 @@ const createTask = (payload) => {
         ElNotification({
           title: 'Task created',
           message: h('p', { style: 'color: green' }, 'Task created:' + data.data.public_id),
-        })
+        });
+        loadTasks();
       },
       err => console.error(err),
   );
 }
+
+const loadTasks = () => {
+  askBackend("task/list", {}).then(
+      data => {
+        if (!data.ok) {
+          return;
+        }
+        tasks.value = data.data;
+      },
+      err => console.error(err),
+  )
+}
+
 
 const getJWT = () => {
   const urlParams = new URLSearchParams(window.location.search);
@@ -85,7 +100,7 @@ const getJWT = () => {
         store.commit("initDone");
         store.commit("setAuth", 1);
         store.commit("setJWT", jwt);
-
+        loadTasks();
       },
       err => {
         store.commit("initDone");
