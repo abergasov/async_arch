@@ -2,7 +2,11 @@ package entities
 
 import "github.com/google/uuid"
 
-const NewTaskStatus = "new"
+const (
+	TaskCUDBrokerTopic = "taskCUD"
+	TaskCreatedEvent   = "TaskCreated"
+	NewTaskStatus      = "new"
+)
 
 type Task struct {
 	TaskID      int64     `json:"-" db:"task_id"`
