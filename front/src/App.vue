@@ -2,7 +2,7 @@
   <el-skeleton v-if="!initDone" :row="20" />
   <div v-else>
     <Auth v-if="!auth"/>
-    <Dashboard v-else :user="user" :tasks="tasks" v-on:change_role="changeRole" v-on:create_task="createTask"/>
+    <Dashboard v-else :user="user" :tasks="tasks" v-on:assign_tasks="assignTasks" v-on:change_role="changeRole" v-on:create_task="createTask"/>
   </div>
 </template>
 
@@ -30,6 +30,18 @@ const changeRole = (payload) => {
         }
         user.value = data.data;
         store.commit("setJWT", data.token);
+      },
+      err => console.error(err),
+  )
+}
+
+const assignTasks = () => {
+  askBackend("task/assign", {}).then(
+      data => {
+        if (!data.ok) {
+          return;
+        }
+        tasks.value = data.data;
       },
       err => console.error(err),
   )

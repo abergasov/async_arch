@@ -40,3 +40,13 @@ func (ar *TaskAppRouter) getTaskList(c echo.Context) error {
 	}
 	return c.JSON(http.StatusOK, map[string]interface{}{"ok": true, "data": tasks})
 }
+
+func (ar *TaskAppRouter) assignFreeTasks(c echo.Context) error {
+	user, _ := c.Get("user").(*jwt.Token)
+	claims, _ := user.Claims.(*entities.UserJWT)
+	tasks, err := ar.tManager.AssignTasks(claims.UserID, claims.UserVersion)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, entities.ErrorRequest{})
+	}
+	return c.JSON(http.StatusOK, map[string]interface{}{"ok": true, "data": tasks})
+}

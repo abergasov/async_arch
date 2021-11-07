@@ -18,7 +18,7 @@ type UserAccount struct {
 	UserMail string    `json:"user_mail" db:"user_mail"`
 	UserRole string    `json:"user_role" db:"user_role"`
 	Version  int       `json:"version" db:"user_version"`
-	Active   int       `json:"active" db:"active"`
+	Active   bool      `json:"active" db:"active"`
 }
 
 type UserJWT struct {

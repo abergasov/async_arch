@@ -11,6 +11,7 @@ const (
 	TaskCUDBrokerTopic = "taskCUD"
 	TaskCreatedEvent   = "TaskCreated"
 	NewTaskStatus      = "new"
+	AssignedTaskStatus = "assigned"
 )
 
 type Task struct {
@@ -25,4 +26,9 @@ type Task struct {
 	CreatedAt   time.Time    `json:"created_at" db:"created_at"`
 	AssignedTo  uuid.UUID    `json:"assigned_to" db:"assigned_to"`
 	AssignedAt  sql.NullTime `json:"assigned_at" db:"assigned_at"`
+}
+
+type TaskAssignContainer struct {
+	TaskPublicID uuid.UUID
+	UserPublicID uuid.UUID
 }

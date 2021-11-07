@@ -19,6 +19,7 @@ import (
 const (
 	Worker    = "worker"
 	AdminRole = "admin"
+	Manager   = "manager"
 )
 
 type UserService struct {

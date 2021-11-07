@@ -8,7 +8,7 @@ create table users
     user_name varchar,
     user_version smallint,
     user_role varchar(10),
-    active bit
+    active bool
 );
 
 create index users_active_index
@@ -23,6 +23,8 @@ create index users_user_role_index
 create index users_user_mail_index
     on users (user_mail);
 
+create index users_user_role_active_index
+    on users (user_role, active);
 
 create table tasks
 (
@@ -36,9 +38,7 @@ create table tasks
     assign_cost int,
     done_cost int,
     status varchar(10),
-    created_at timestamp,
-    assigned_to uuid,
-    assigned_at timestamp
+    created_at timestamp
 );
 
 create index tasks_author_index
@@ -50,5 +50,14 @@ create index tasks_public_id_index
 create index tasks_created_at_index
     on tasks (created_at);
 
-create index tasks_assigned_to_index
-    on tasks (assigned_to);
+create table task_assignments
+(
+    task_uuid uuid
+        constraint task_assignments_pk
+            primary key,
+    assigned_to uuid,
+    assigned_at timestamp
+);
+
+create index task_assigmants_assigned_to_index
+    on task_assignments (assigned_to);

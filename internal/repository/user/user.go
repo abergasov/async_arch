@@ -112,6 +112,18 @@ func (u *User) UpdateUser(account *entities.UserAccount) error {
 	return nil
 }
 
-func (u *User) DeleteUser(account entities.UserAccount) error {
-	return nil
+func (u *User) GetActiveWorkers() ([]uuid.UUID, error) {
+	result := make([]uuid.UUID, 0, 1000)
+	rows, err := u.conn.Client().Queryx("SELECT public_id FROM users WHERE active = true AND user_role = 'worker'")
+	if err != nil {
+		logger.Error("error get active workers", err)
+		return result, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var uID uuid.UUID
+		rows.Scan(&uID)
+		result = append(result, uID)
+	}
+	return result, nil
 }

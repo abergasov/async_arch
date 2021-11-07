@@ -1,12 +1,16 @@
 package task
 
 import (
+	"fmt"
 	"math/rand"
+	"strings"
 	"time"
 
 	"async_arch/internal/entities"
 	"async_arch/internal/logger"
 	"async_arch/internal/storage/database"
+
+	"github.com/lib/pq"
 
 	"github.com/jmoiron/sqlx"
 
@@ -54,7 +58,10 @@ func (t *TaskRepo) calcCost() (assignCost int64, doneCost int64) {
 }
 
 func (t *TaskRepo) GetAllTasks() ([]*entities.Task, error) {
-	rows, err := t.conn.Client().Queryx("SELECT * FROM tasks WHERE DATE(created_at) = CURRENT_DATE")
+	rows, err := t.conn.Client().Queryx(`SELECT t.*, ta.assigned_to
+		FROM tasks t
+		LEFT JOIN task_assignments ta ON ta.task_uuid = t.public_id
+		WHERE DATE(t.created_at) = CURRENT_DATE`)
 	return t.getTasks(rows, err)
 }
 
@@ -79,4 +86,65 @@ func (t *TaskRepo) getTasks(rows *sqlx.Rows, err error) ([]*entities.Task, error
 		result = append(result, &tsk)
 	}
 	return result, err
+}
+
+func (t *TaskRepo) GetUnAssignedTasks() ([]*entities.Task, error) {
+	rows, err := t.conn.Client().Queryx(`SELECT t.*, ta.assigned_to, ta.assigned_at
+		FROM tasks t
+		LEFT JOIN task_assignments ta ON ta.task_uuid = t.public_id
+		WHERE assigned_to IS NULL AND DATE(created_at) = CURRENT_DATE`)
+	if err != nil {
+		logger.Error("error load unassigned tasks", err)
+		return nil, err
+	}
+	result := make([]*entities.Task, 0, 1000)
+	defer rows.Close()
+	for rows.Next() {
+		var ts entities.Task
+		if err = rows.StructScan(&ts); err != nil {
+			logger.Error("error parse unassigned task", err)
+			continue
+		}
+		result = append(result, &ts)
+	}
+	return result, nil
+}
+
+func (t *TaskRepo) AssignTasks(assign []*entities.TaskAssignContainer) error {
+	sqlA := make([]string, 0, len(assign))
+	sqlParams := make([]interface{}, 0, len(assign)*2)
+	counter := 1
+
+	taskUUIDs := make([]interface{}, 0, len(assign))
+	for i := range assign {
+		// placeholders for assigment
+		sqlA = append(sqlA, fmt.Sprintf("($%d, $%d, NOW())", counter, counter+1))
+		sqlParams = append(sqlParams, assign[i].TaskPublicID, assign[i].UserPublicID)
+		counter += 2
+
+		// placeholders for remove existing assigmants
+		taskUUIDs = append(taskUUIDs, assign[i].TaskPublicID)
+	}
+	// clear old assignments to avoid duplicate errors
+	if _, err := t.conn.Client().Exec(
+		"DELETE FROM task_assignments WHERE task_uuid = any ($1)",
+		pq.Array(taskUUIDs),
+	); err != nil {
+		logger.Error("error delete task assignments", err)
+		return err
+	}
+	_, err := t.conn.Client().Exec("INSERT INTO task_assignments (task_uuid, assigned_to, assigned_at) VALUES "+strings.Join(sqlA, ","), sqlParams...)
+	if err != nil {
+		logger.Error("error task assign", err)
+		return err
+	}
+	_, err = t.conn.Client().Exec(
+		"UPDATE tasks SET status = $1 WHERE public_id = ANY ($2)",
+		entities.AssignedTaskStatus,
+		pq.Array(taskUUIDs),
+	)
+	if err != nil {
+		logger.Error("error update task status", err)
+	}
+	return err
 }

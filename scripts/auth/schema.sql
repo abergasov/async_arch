@@ -8,7 +8,7 @@ create table users
     user_name varchar,
     user_version smallint,
     user_role varchar(10),
-    active bit
+    active bool
 );
 
 create index users_active_index

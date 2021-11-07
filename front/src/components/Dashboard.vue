@@ -19,8 +19,12 @@
               <select v-model="role">
                 <option value="admin">Admin</option>
                 <option value="worker">Worker</option>
+                <option value="manager">Manager</option>
               </select>
               <button @click="changeRole">change role</button>
+              <br/>
+              <br/>
+              <button v-if="user.user_role !== 'worker'" @click="assignTasks">assign tasks</button>
             </p>
           </el-card>
         </el-col>
@@ -80,6 +84,9 @@ export default {
   methods: {
     changeRole() {
       this.$emit("change_role", {role: this.role});
+    },
+    assignTasks() {
+      this.$emit("assign_tasks");
     },
     createTask() {
       this.$emit("create_task", {task: this.newTask});
