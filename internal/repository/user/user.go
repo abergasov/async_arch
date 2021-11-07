@@ -95,6 +95,23 @@ func (u *User) CreateUser(account *entities.UserAccount) error {
 	return nil
 }
 
+func (u *User) UpdateUser(account *entities.UserAccount) error {
+	if _, err := u.conn.Client().NamedExec(
+		"UPDATE users SET user_mail=:user_mail, user_name=:user_name, user_version=:user_version, user_role=:user_role, active=:active WHERE public_id=:public_id",
+		map[string]interface{}{
+			"public_id":    account.PublicID,
+			"user_mail":    account.UserMail,
+			"user_name":    account.UserName,
+			"user_version": account.Version,
+			"user_role":    account.UserRole,
+			"active":       account.Active,
+		}); err != nil {
+		logger.Error("error insert user", err)
+		return err
+	}
+	return nil
+}
+
 func (u *User) DeleteUser(account entities.UserAccount) error {
 	return nil
 }

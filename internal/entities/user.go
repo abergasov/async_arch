@@ -8,6 +8,7 @@ import (
 const (
 	UserCUDBrokerTopic = "userCUD"
 	UserCreatedEvent   = "UserCreated"
+	UserUpdatedEvent   = "UserUpdated"
 )
 
 type UserAccount struct {

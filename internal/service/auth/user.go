@@ -46,6 +46,8 @@ func (u *UserService) Login(googleUser *entities.GoogleUser) (string, error) {
 			logger.Error("error load user by mail after creation", err)
 			return "", err
 		}
+
+		// stream create event to broker
 		b, _ := json.Marshal(usr)
 		if err = u.broker.WriteMessages(context.Background(), kafka.Message{
 			Key:   []byte(entities.UserCreatedEvent),
@@ -90,6 +92,17 @@ func (u *UserService) ChangeRole(publicID uuid.UUID, userVersion int, newRole st
 		logger.Error("error update user", err)
 		return nil, "", err
 	}
+
+	// stream change event to broker
+	b, _ := json.Marshal(usr)
+	if err = u.broker.WriteMessages(context.Background(), kafka.Message{
+		Key:   []byte(entities.UserUpdatedEvent),
+		Value: b,
+	}); err != nil {
+		logger.Error("error stream event", err)
+		return nil, "", err
+	}
+
 	jwtKey, err := u.generateJWT(usr)
 	return usr, jwtKey, err
 }
