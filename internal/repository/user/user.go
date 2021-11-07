@@ -27,7 +27,7 @@ func InitUserRepo(conn database.DBConnector) *User {
 }
 
 func (u *User) GetUserByMail(email string) (*entities.UserAccount, error) {
-	sqlS := "SELECT user_id, public_id, user_mail, user_name, user_version, user_role, user_role FROM users WHERE user_mail = $1"
+	sqlS := "SELECT user_id, public_id, user_mail, user_name, user_version, user_role, user_role, active FROM users WHERE user_mail = $1"
 	var usr entities.UserAccount
 	err := u.conn.Client().QueryRowx(sqlS, email).StructScan(&usr)
 	if err != nil && err == sql.ErrNoRows {
@@ -77,7 +77,21 @@ func (u *User) ChangeRole(publicID uuid.UUID, version int, role string) (*entiti
 	return u.GetUserByPublicID(publicID, version+1)
 }
 
-func (u *User) UpdateUser(account entities.UserAccount) error {
+func (u *User) CreateUser(account *entities.UserAccount) error {
+	_, err := u.conn.Client().NamedExec(
+		"INSERT INTO users (public_id, user_mail, user_name, user_version, user_role, active) VALUES (:public_id, :user_mail, :user_name, :user_version, :user_role, :active)",
+		map[string]interface{}{
+			"public_id":    account.PublicID,
+			"user_mail":    account.UserMail,
+			"user_name":    account.UserName,
+			"user_version": account.Version,
+			"user_role":    account.UserRole,
+			"active":       account.Active,
+		})
+	if err != nil {
+		logger.Error("error insert user", err)
+		return err
+	}
 	return nil
 }
 
