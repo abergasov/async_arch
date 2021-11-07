@@ -16,11 +16,11 @@ func (ar *AuthAppRouter) changeRole(c echo.Context) error {
 		Role string `json:"role"`
 	}
 	if err := c.Bind(&u); err != nil {
-		return c.JSON(http.StatusBadRequest, map[string]bool{"ok": false})
+		return c.JSON(http.StatusBadRequest, entities.ErrorRequest{})
 	}
 	usr, jwtKey, err := ar.uService.ChangeRole(claims.UserID, claims.UserVersion, u.Role)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]bool{"ok": false})
+		return c.JSON(http.StatusInternalServerError, entities.ErrorRequest{})
 	}
 	return c.JSON(http.StatusOK, map[string]interface{}{"ok": true, "data": usr, "token": jwtKey})
 }

@@ -14,7 +14,7 @@ func (ar *AuthAppRouter) dashboardData(c echo.Context) error {
 	claims, _ := user.Claims.(*entities.UserJWT)
 	usr, err := ar.uService.GetUserInfo(claims.UserID, claims.UserVersion)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]bool{"ok": true})
+		return c.JSON(http.StatusInternalServerError, entities.ErrorRequest{})
 	}
 	return c.JSON(http.StatusOK, map[string]interface{}{"ok": true, "data": usr})
 }

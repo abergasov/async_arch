@@ -1,5 +1,5 @@
 <template>
-  <van-button @click="googleLogin" type="primary">Login with google</van-button>
+  <el-button type="primary" @click="googleLogin">Login with google</el-button>
 </template>
 
 <script setup>

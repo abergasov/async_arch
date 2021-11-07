@@ -2,13 +2,13 @@ import { createApp } from 'vue'
 import App from './App.vue'
 import axios from 'axios';
 import store from "./store";
-import Vant from 'vant';
-import 'vant/lib/index.css';
+import ElementPlus from 'element-plus'
+import 'element-plus/dist/index.css'
 import {useStore} from "vuex";
 
 const app = createApp(App);
 app.use(store);
-app.use(Vant);
+app.use(ElementPlus);
 
 app.config.globalProperties.askBackend = (url, param) => {
     let config = {

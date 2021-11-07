@@ -22,3 +22,24 @@ create index users_user_role_index
 
 create index users_user_mail_index
     on users (user_mail);
+
+
+create table tasks
+(
+    task_id serial
+        constraint tasks_pk
+            primary key,
+    public_id uuid,
+    author uuid,
+    title varchar(255),
+    description text,
+    assign_cost int,
+    done_cost int,
+    status varchar(10)
+);
+
+create index tasks_author_index
+    on tasks (author);
+
+create index tasks_public_id_index
+    on tasks (public_id);

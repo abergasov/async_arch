@@ -6,6 +6,7 @@ import (
 	"async_arch/internal/config"
 	"async_arch/internal/entities"
 	"async_arch/internal/logger"
+	task2 "async_arch/internal/repository/task"
 	"async_arch/internal/repository/user"
 	"async_arch/internal/routes/task_routes"
 	"async_arch/internal/service/task"
@@ -27,10 +28,12 @@ func main() {
 	conn := database.InitDBConnect(&conf.ConfigDB)
 
 	userRepo := user.InitUserRepo(conn)
+	taskRepo := task2.InitTaskRepo(conn)
 	kfk := broker.InitKafkaConsumer(&conf.ConfigBroker, entities.UserCUDBrokerTopic)
-	userService := task.InitUserTaskService(userRepo, kfk, conf.JWTKey)
+	task.InitUserTaskService(userRepo, kfk, conf.JWTKey)
 
-	router := task_routes.InitAuthAppRouter(conf, userService)
+	taskService := task.InitTaskManager(taskRepo)
+	router := task_routes.InitAuthAppRouter(conf, taskService)
 	logger.Info("start auth app", zap.String("url", conf.AppHost+":"+conf.AppPort))
 	if err := router.InitRoutes(conf.JWTKey).Start(":" + conf.AppPort); err != nil {
 		logger.Fatal("Common server error", err)

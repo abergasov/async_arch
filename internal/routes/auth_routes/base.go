@@ -52,9 +52,9 @@ func (ar *AuthAppRouter) InitRoutes(jwtKey string) *echo.Echo {
 	})
 	ar.httpEngine.GET("/auth/google/login", ar.oauthGoogleLogin)
 	ar.httpEngine.GET("/auth/google/callback", ar.oauthGoogleCallback)
-	ar.httpEngine.POST("/api/v1/exchange", ar.exchangeCode)
+	ar.httpEngine.POST("/api/v1/auth/exchange", ar.exchangeCode)
 
-	userData := ar.httpEngine.Group("/api/v1/")
+	userData := ar.httpEngine.Group("/api/v1/auth/")
 	{
 		userData.Use(middleware.JWTWithConfig(middleware.JWTConfig{
 			Claims:        &entities.UserJWT{},

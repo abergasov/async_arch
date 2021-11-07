@@ -60,11 +60,11 @@ func (ar *AuthAppRouter) oauthGoogleCallback(c echo.Context) error {
 
 	jwt, err := ar.uService.Login(usr)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]bool{"ok": false})
+		return c.JSON(http.StatusInternalServerError, entities.ErrorRequest{})
 	}
 	code, err := ar.exchanger.SetKey(jwt)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]bool{"ok": false})
+		return c.JSON(http.StatusInternalServerError, entities.ErrorRequest{})
 	}
 	return c.Redirect(http.StatusTemporaryRedirect, "http://localhost:3000?code="+code.String())
 }
@@ -96,11 +96,11 @@ func (ar *AuthAppRouter) exchangeCode(c echo.Context) error {
 		Code uuid.UUID `json:"code"`
 	}
 	if err := c.Bind(&u); err != nil {
-		return c.JSON(http.StatusBadRequest, map[string]bool{"ok": false})
+		return c.JSON(http.StatusBadRequest, entities.ErrorRequest{})
 	}
 	code, err := ar.exchanger.GetKey(u.Code)
 	if err != nil {
-		return c.JSON(http.StatusNotFound, map[string]bool{"ok": false})
+		return c.JSON(http.StatusNotFound, entities.ErrorRequest{})
 	}
 	return c.JSON(http.StatusOK, map[string]interface{}{"ok": true, "code": code})
 }
