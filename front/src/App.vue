@@ -2,7 +2,7 @@
   <van-skeleton v-if="!initDone" :row="20" />
   <div v-else>
     <Auth v-if="!auth"/>
-    <Dashboard v-else :user="user" />
+    <Dashboard v-else :user="user" v-on:change_role="changeRole"/>
   </div>
 </template>
 
@@ -29,6 +29,19 @@ const user = ref({})
 //   }
 // })
 // let ;
+
+const changeRole = (payload) => {
+  askBackend("change_role", payload).then(
+      data => {
+        if (!data.ok) {
+          return
+        }
+        user.value = data.data;
+        store.commit("setJWT", data.token);
+      },
+      err => console.error(err),
+  )
+}
 
 const getJWT = () => {
   const urlParams = new URLSearchParams(window.location.search);

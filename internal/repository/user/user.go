@@ -2,6 +2,7 @@ package user
 
 import (
 	"database/sql"
+	"errors"
 
 	"async_arch/internal/entities"
 	"async_arch/internal/logger"
@@ -14,6 +15,7 @@ type UserRepo interface {
 	GetUserByMail(email string) (usr *entities.UserAccount, err error)
 	AddUser(googleUser *entities.GoogleUser, userRole string) error
 	GetUserByPublicID(publicID uuid.UUID, version int) (*entities.UserAccount, error)
+	ChangeRole(publicID uuid.UUID, version int, role string) (*entities.UserAccount, error)
 }
 
 type User struct {
@@ -53,10 +55,26 @@ func (u *User) AddUser(googleUser *entities.GoogleUser, userRole string) error {
 }
 
 func (u *User) GetUserByPublicID(publicID uuid.UUID, version int) (*entities.UserAccount, error) {
-	sqlS := "SELECT user_id, public_id, user_mail, user_name, user_version, user_role, user_role FROM users WHERE public_id = $1 AND user_version = $2"
+	sqlS := "SELECT user_id, public_id, user_mail, user_name, user_version, user_role, user_role, active FROM users WHERE public_id = $1 AND user_version = $2"
 	var usr entities.UserAccount
 	err := u.conn.Client().QueryRowx(sqlS, publicID, version).StructScan(&usr)
 	return &usr, err
+}
+
+func (u *User) ChangeRole(publicID uuid.UUID, version int, role string) (*entities.UserAccount, error) {
+	sqlU := "UPDATE users SET user_role = $1, user_version = user_version + 1 WHERE public_id = $2 AND user_version = $3"
+	rows, err := u.conn.Client().Exec(sqlU, role, publicID, version)
+	if err != nil {
+		logger.Error("error change role", err)
+		return nil, err
+	}
+	i, _ := rows.RowsAffected()
+	if i == 0 {
+		err = errors.New("user not updated")
+		logger.Error("error change role", err)
+		return nil, err
+	}
+	return u.GetUserByPublicID(publicID, version+1)
 }
 
 func (u *User) UpdateUser(account entities.UserAccount) error {

@@ -64,6 +64,7 @@ func (ar *AuthAppRouter) InitRoutes(jwtKey string) *echo.Echo {
 			SigningMethod: jwt.SigningMethodHS512.Name,
 		}))
 		userData.POST("dashboard", ar.dashboardData)
+		userData.POST("change_role", ar.changeRole)
 	}
 	return ar.httpEngine
 }

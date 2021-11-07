@@ -71,6 +71,16 @@ func (u *UserService) generateJWT(usr *entities.UserAccount) (string, error) {
 	return jwtKey, nil
 }
 
+func (u *UserService) ChangeRole(publicID uuid.UUID, userVersion int, newRole string) (*entities.UserAccount, string, error) {
+	usr, err := u.uRepo.ChangeRole(publicID, userVersion, newRole)
+	if err != nil {
+		logger.Error("error update user", err)
+		return nil, "", err
+	}
+	jwtKey, err := u.generateJWT(usr)
+	return usr, jwtKey, err
+}
+
 func (u *UserService) GetUserInfo(publicID uuid.UUID, userVersion int) (*entities.UserAccount, error) {
 	return u.uRepo.GetUserByPublicID(publicID, userVersion)
 }

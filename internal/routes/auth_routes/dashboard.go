@@ -16,13 +16,5 @@ func (ar *AuthAppRouter) dashboardData(c echo.Context) error {
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]bool{"ok": true})
 	}
-	return c.JSON(http.StatusOK, map[string]interface{}{
-		"ok": true,
-		"data": map[string]interface{}{
-			"name":      usr.UserName,
-			"email":     usr.UserMail,
-			"public_id": usr.PublicID,
-			"role":      usr.UserRole,
-		},
-	})
+	return c.JSON(http.StatusOK, map[string]interface{}{"ok": true, "data": usr})
 }
