@@ -39,14 +39,28 @@ services:
   authDB:
     image: postgres:14.0
     env_file:
-      - configs/common.env
+      - configs/common_auth.env
     container_name: arch_auth_db.sh
     restart: always
     tty: true
     ports:
       - 4666:5432
     volumes:
-      - ./scripts/schema.sql:/docker-entrypoint-initdb.d/1.sql
+      - ./scripts/auth/schema.sql:/docker-entrypoint-initdb.d/1.sql
+    networks:
+      - app-network
+
+  taskDB:
+    image: postgres:14.0
+    env_file:
+      - configs/common_task.env
+    container_name: arch_task_db.sh
+    restart: always
+    tty: true
+    ports:
+      - 4667:5432
+    volumes:
+      - ./scripts/task/schema.sql:/docker-entrypoint-initdb.d/1.sql
     networks:
       - app-network
 

@@ -6,7 +6,7 @@ import (
 	"async_arch/internal/config"
 	"async_arch/internal/entities"
 	"async_arch/internal/repository/exchanger"
-	"async_arch/internal/service"
+	"async_arch/internal/service/auth"
 
 	"github.com/golang-jwt/jwt"
 
@@ -22,17 +22,15 @@ var googleScopes = []string{
 	"https://www.googleapis.com/auth/userinfo.email",
 }
 
-const tokenCookie = "tc"
-
 type AuthAppRouter struct {
 	httpEngine  *echo.Echo
 	googleOAuth *oauth2.Config
 	appConf     *config.AppConfig
-	uService    *service.UserService
+	uService    *auth.UserService
 	exchanger   *exchanger.Exchanger
 }
 
-func InitAuthAppRouter(appConf *config.AppConfig, uService *service.UserService, exchanger *exchanger.Exchanger) *AuthAppRouter {
+func InitAuthAppRouter(appConf *config.AppConfig, uService *auth.UserService, exchanger *exchanger.Exchanger) *AuthAppRouter {
 	return &AuthAppRouter{
 		httpEngine: echo.New(),
 		exchanger:  exchanger,

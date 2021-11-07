@@ -4,11 +4,12 @@ import (
 	"flag"
 
 	"async_arch/internal/config"
+	"async_arch/internal/entities"
 	"async_arch/internal/logger"
 	"async_arch/internal/repository/exchanger"
 	"async_arch/internal/repository/user"
 	"async_arch/internal/routes/auth_routes"
-	"async_arch/internal/service"
+	"async_arch/internal/service/auth"
 	"async_arch/internal/storage/broker"
 	"async_arch/internal/storage/database"
 
@@ -27,8 +28,8 @@ func main() {
 	conn := database.InitDBConnect(&conf.ConfigDB)
 
 	userRepo := user.InitUserRepo(conn)
-	brokerKfk := broker.InitKafkaProducer(&conf.ConfigBroker, service.BrokerTopic)
-	userService := service.InitUserService(userRepo, brokerKfk, conf.JWTKey)
+	brokerKfk := broker.InitKafkaProducer(&conf.ConfigBroker, entities.UserCUDBrokerTopic)
+	userService := auth.InitUserService(userRepo, brokerKfk, conf.JWTKey)
 
 	exc := exchanger.InitExchanger(conn) // exchange uuid to jwt
 	router := auth_routes.InitAuthAppRouter(conf, userService, exc)

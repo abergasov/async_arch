@@ -5,6 +5,11 @@ import (
 	"github.com/google/uuid"
 )
 
+const (
+	UserCUDBrokerTopic = "userCUD"
+	UserCreatedEvent   = "UserCreated"
+)
+
 type UserAccount struct {
 	ID       int64     `json:"-" db:"user_id"`
 	PublicID uuid.UUID `json:"public_id" db:"public_id"`

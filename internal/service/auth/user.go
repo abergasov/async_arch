@@ -1,4 +1,4 @@
-package service
+package auth
 
 import (
 	"context"
@@ -17,9 +17,8 @@ import (
 )
 
 const (
-	BrokerTopic = "userCUD"
-	Worker      = "worker"
-	AdminRole   = "admin"
+	Worker    = "worker"
+	AdminRole = "admin"
 )
 
 type UserService struct {
@@ -49,7 +48,7 @@ func (u *UserService) Login(googleUser *entities.GoogleUser) (string, error) {
 		}
 		b, _ := json.Marshal(usr)
 		if err = u.broker.WriteMessages(context.Background(), kafka.Message{
-			Key:   []byte("UserCreated"),
+			Key:   []byte(entities.UserCreatedEvent),
 			Value: b,
 		}); err != nil {
 			logger.Error("error stream event", err)
