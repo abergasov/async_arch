@@ -66,7 +66,10 @@ func (t *TaskRepo) GetAllTasks() ([]*entities.Task, error) {
 }
 
 func (t *TaskRepo) GetUserTasks(userPublicID uuid.UUID) ([]*entities.Task, error) {
-	rows, err := t.conn.Client().Queryx("SELECT * FROM tasks WHERE (assigned_to = $1 OR author = $2) AND DATE(created_at) = CURRENT_DATE", userPublicID, userPublicID)
+	rows, err := t.conn.Client().Queryx(`SELECT t.*, ta.assigned_to
+		FROM tasks t
+		LEFT JOIN task_assignments ta ON ta.task_uuid = t.public_id
+		WHERE (ta.assigned_to = $1 OR t.author = $2) AND DATE(t.created_at) = CURRENT_DATE`, userPublicID, userPublicID)
 	return t.getTasks(rows, err)
 }
 

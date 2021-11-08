@@ -93,6 +93,11 @@ func (t *TaskManager) AssignTasks(userPublicID uuid.UUID, userVersion int) ([]*e
 	if len(tasks) == 0 {
 		return t.LoadTasks(userPublicID, userVersion)
 	}
+	if len(workers) == 0 {
+		err = errors.New("empty workers list")
+		logger.Error("there is no workers in system", err)
+		return nil, err
+	}
 	if err = t.assignTasks(workers, tasks); err != nil {
 		logger.Error("error assign tasks", err)
 		return nil, err
