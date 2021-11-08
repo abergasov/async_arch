@@ -11,8 +11,10 @@ const (
 	TaskCUDBrokerTopic = "taskCUD"
 	TaskCreatedEvent   = "TaskCreated"
 	TaskAssignedEvent  = "TaskAssigned"
+	TaskFinishEvent    = "TaskFinished"
 	NewTaskStatus      = "new"
 	AssignedTaskStatus = "assigned"
+	FinishTaskStatus   = "done"
 )
 
 type Task struct {

@@ -5,6 +5,8 @@ import (
 
 	"async_arch/internal/entities"
 
+	"github.com/google/uuid"
+
 	"github.com/golang-jwt/jwt"
 	"github.com/labstack/echo/v4"
 )
@@ -49,4 +51,20 @@ func (ar *TaskAppRouter) assignFreeTasks(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, entities.ErrorRequest{})
 	}
 	return c.JSON(http.StatusOK, map[string]interface{}{"ok": true, "data": tasks})
+}
+
+func (ar *TaskAppRouter) doneTask(c echo.Context) error {
+	user, _ := c.Get("user").(*jwt.Token)
+	claims, _ := user.Claims.(*entities.UserJWT)
+	var t struct {
+		TaskID uuid.UUID `json:"task_id"`
+	}
+	if err := c.Bind(&t); err != nil {
+		return c.JSON(http.StatusBadRequest, entities.ErrorRequest{})
+	}
+	err := ar.tManager.DoneTasks(t.TaskID, claims.UserID, claims.UserVersion)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, entities.ErrorRequest{})
+	}
+	return c.JSON(http.StatusOK, map[string]interface{}{"ok": true})
 }

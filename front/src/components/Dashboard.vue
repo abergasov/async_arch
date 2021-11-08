@@ -51,11 +51,18 @@
       <el-row :gutter="20">
         <el-col :span="24">
           <el-card class="box-card">
-            <el-table :data="tasks" style="width: 100%">
+            <el-table :data="tasks" style="width: 100%"
+                      :row-class-name="tableRowClassName">
               <el-table-column prop="public_id" label="public_id" width="280" />
               <el-table-column prop="title" label="title" width="180" />
               <el-table-column prop="created_at" label="created_at" />
               <el-table-column prop="status" label="status" />
+              <el-table-column label="Operations">
+                <template #default="scope">
+                  <el-button v-if="showBtn(scope.row)" size="mini" @click="handleEdit(scope.row)"
+                  >Finish</el-button>
+                </template>
+              </el-table-column>
             </el-table>
           </el-card>
         </el-col>
@@ -82,6 +89,22 @@ export default {
     };
   },
   methods: {
+    handleEdit(row) {
+      this.$emit("done_tasks", {task_id: row.public_id});
+    },
+    tableRowClassName({ row, rowIndex }) {
+      if (row.assigned_to === this.$store.state.user) {
+        return 'warning-row'
+      }
+      return ''
+    },
+    showBtn(row) {
+      if (row.assigned_to === this.$store.state.user && row.status !== "done") {
+        return true
+      }
+      return false
+    },
+
     changeRole() {
       this.$emit("change_role", {role: this.role});
     },
@@ -103,5 +126,8 @@ export default {
 <style scoped>
 a {
   color: #42b983;
+}
+.warning-row {
+  background-color: greenyellow;
 }
 </style>

@@ -4,6 +4,7 @@ import { createStore } from 'vuex'
 const store = createStore({
     state () {
         return {
+            user: "",
             auth: 0,
             init_done: false,
             key: localStorage.getItem('key'),
@@ -19,6 +20,9 @@ const store = createStore({
         setJWT (state, payload) {
             localStorage.setItem('key', payload);
             state.key = payload;
+        },
+        setUser (state, payload) {
+            state.user = payload;
         },
         initDone (state) {
             state.init_done = true;

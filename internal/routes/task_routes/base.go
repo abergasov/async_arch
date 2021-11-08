@@ -41,6 +41,7 @@ func (ar *TaskAppRouter) InitRoutes(jwtKey string) *echo.Echo {
 		userData.POST("create", ar.createTask)
 		userData.POST("list", ar.getTaskList)
 		userData.POST("assign", ar.assignFreeTasks)
+		userData.POST("done", ar.doneTask)
 	}
 	return ar.httpEngine
 }

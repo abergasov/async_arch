@@ -27,7 +27,10 @@ func InitTaskRepo(conn database.DBConnector) *TaskRepo {
 
 func (t *TaskRepo) GetTaskByPublicID(taskID uuid.UUID) (*entities.Task, error) {
 	var tsk entities.Task
-	err := t.conn.Client().QueryRowx("SELECT * FROM tasks WHERE public_id = $1", taskID).StructScan(&tsk)
+	err := t.conn.Client().QueryRowx(`SELECT t.*, ta.assigned_to, ta.assigned_at 
+		FROM tasks t
+		LEFT JOIN task_assignments ta ON ta.task_uuid = t.public_id
+		WHERE public_id = $1`, taskID).StructScan(&tsk)
 	if err != nil {
 		logger.Error("error load task", err)
 	}
@@ -149,5 +152,10 @@ func (t *TaskRepo) AssignTasks(assign []*entities.TaskAssignContainer) error {
 	if err != nil {
 		logger.Error("error update task status", err)
 	}
+	return err
+}
+
+func (t *TaskRepo) DoneTask(taskPublicID uuid.UUID) error {
+	_, err := t.conn.Client().Exec("UPDATE tasks SET status = $1 WHERE public_id = $2", entities.FinishTaskStatus, taskPublicID)
 	return err
 }

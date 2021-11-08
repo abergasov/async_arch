@@ -28,6 +28,7 @@ type TaskRepo interface {
 	GetUserTasks(userPublicID uuid.UUID) ([]*entities.Task, error)
 	GetUnAssignedTasks() ([]*entities.Task, error)
 	AssignTasks(assign []*entities.TaskAssignContainer) error
+	DoneTask(taskPublicID uuid.UUID) error
 }
 
 type TaskManager struct {
@@ -132,4 +133,29 @@ func (t *TaskManager) assignTasks(userIDs []uuid.UUID, targetTasks []*entities.T
 		targetTasks[i].AssignedTo = workerID
 	}
 	return t.tRepo.AssignTasks(assigned)
+}
+
+func (t *TaskManager) DoneTasks(taskPublicID, userPublicID uuid.UUID, userVersion int) error {
+	usr, err := t.uRepo.GetUserByPublicID(userPublicID, userVersion)
+	if err != nil {
+		return err
+	}
+	task, err := t.tRepo.GetTaskByPublicID(taskPublicID)
+	if task.AssignedTo != usr.PublicID {
+		err = errors.New("task not assigned to this user")
+		return err
+	}
+	if err = t.tRepo.DoneTask(taskPublicID); err != nil {
+		logger.Error("erorr finish task", err)
+		return err
+	}
+	b, _ := json.Marshal(task)
+	if err = t.broker.WriteMessages(context.Background(), kafka.Message{
+		Key:   []byte(entities.TaskFinishEvent),
+		Value: b,
+	}); err != nil {
+		logger.Error("error stream event", err)
+		return err
+	}
+	return nil
 }

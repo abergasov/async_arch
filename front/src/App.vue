@@ -2,7 +2,11 @@
   <el-skeleton v-if="!initDone" :row="20" />
   <div v-else>
     <Auth v-if="!auth"/>
-    <Dashboard v-else :user="user" :tasks="tasks" v-on:assign_tasks="assignTasks" v-on:change_role="changeRole" v-on:create_task="createTask"/>
+    <Dashboard v-else :user="user" :tasks="tasks"
+               v-on:assign_tasks="assignTasks"
+               v-on:change_role="changeRole"
+               v-on:done_tasks="doneTask"
+               v-on:create_task="createTask"/>
   </div>
 </template>
 
@@ -75,6 +79,13 @@ const loadTasks = () => {
   )
 }
 
+const doneTask = (payload) => {
+  askBackend("task/done", payload).then(
+      data => {loadTasks();},
+      err => console.error(err),
+  )
+}
+
 
 const getJWT = () => {
   const urlParams = new URLSearchParams(window.location.search);
@@ -112,6 +123,7 @@ const getJWT = () => {
         store.commit("initDone");
         store.commit("setAuth", 1);
         store.commit("setJWT", jwt);
+        store.commit("setUser", data.user);
         loadTasks();
       },
       err => {
