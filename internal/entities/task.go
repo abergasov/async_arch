@@ -10,6 +10,7 @@ import (
 const (
 	TaskCUDBrokerTopic = "taskCUD"
 	TaskCreatedEvent   = "TaskCreated"
+	TaskAssignedEvent  = "TaskAssigned"
 	NewTaskStatus      = "new"
 	AssignedTaskStatus = "assigned"
 )

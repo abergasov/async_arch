@@ -2,9 +2,11 @@ package task
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"math/rand"
+	"time"
 
 	"async_arch/internal/entities"
 	"async_arch/internal/logger"
@@ -102,16 +104,32 @@ func (t *TaskManager) AssignTasks(userPublicID uuid.UUID, userVersion int) ([]*e
 		logger.Error("error assign tasks", err)
 		return nil, err
 	}
+	messages := make([]kafka.Message, 0, len(tasks))
+	for i := range tasks {
+		b, _ := json.Marshal(tasks[i])
+		messages = append(messages, kafka.Message{
+			Key:   []byte(entities.TaskAssignedEvent),
+			Value: b,
+		})
+	}
+	if err = t.broker.WriteMessages(context.Background(), messages...); err != nil {
+		logger.Error("error stream event", err)
+		return nil, err
+	}
+
 	return t.LoadTasks(userPublicID, userVersion)
 }
 
 func (t *TaskManager) assignTasks(userIDs []uuid.UUID, targetTasks []*entities.Task) error {
 	assigned := make([]*entities.TaskAssignContainer, 0, len(targetTasks))
 	for i := range targetTasks {
+		workerID := userIDs[rand.Intn(len(userIDs)-0)+0]
 		assigned = append(assigned, &entities.TaskAssignContainer{
 			TaskPublicID: targetTasks[i].PublicID,
-			UserPublicID: userIDs[rand.Intn(len(userIDs)-0)+0],
+			UserPublicID: workerID,
 		})
+		targetTasks[i].AssignedAt = sql.NullTime{Time: time.Now()}
+		targetTasks[i].AssignedTo = workerID
 	}
 	return t.tRepo.AssignTasks(assigned)
 }
