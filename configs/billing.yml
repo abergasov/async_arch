@@ -1,0 +1,13 @@
+jwt_key: akjlehyuiAUSDh2
+app_port: 8092
+conf_broker:
+  address: localhost:9092
+conf_db:
+  address: 127.0.0.1
+  port: 4668
+  user: user
+  pass: password
+  db_name: arch_billing_db
+  max_connections: 10
+  read_timeout: 1
+  write_timeout: 1

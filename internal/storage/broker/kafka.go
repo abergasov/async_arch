@@ -14,11 +14,11 @@ func InitKafkaProducer(conf *config.BrokerConf, topic string) *kafka.Writer {
 	}
 }
 
-func InitKafkaConsumer(conf *config.BrokerConf, topic string) *kafka.Reader {
+func InitKafkaConsumer(conf *config.BrokerConf, groupID, topic string) *kafka.Reader {
 	return kafka.NewReader(kafka.ReaderConfig{
 		Brokers:  []string{conf.Address},
 		Topic:    topic,
-		GroupID:  "tasker",
+		GroupID:  groupID,
 		MinBytes: 5,
 		MaxBytes: 10e6,
 		//Partition: 0,

@@ -13,6 +13,8 @@ import (
 	"async_arch/internal/storage/broker"
 	"async_arch/internal/storage/database"
 
+	"github.com/abergasov/schema_registry"
+
 	"go.uber.org/zap"
 )
 
@@ -29,7 +31,9 @@ func main() {
 
 	userRepo := user.InitUserRepo(conn)
 	brokerKfk := broker.InitKafkaProducer(&conf.ConfigBroker, entities.UserCUDBrokerTopic)
-	userService := auth.InitUserService(userRepo, brokerKfk, conf.JWTKey)
+
+	registry := schema_registry.InitRegistry([]int{1})
+	userService := auth.InitUserService(userRepo, registry, brokerKfk, conf.JWTKey)
 
 	exc := exchanger.InitExchanger(conn) // exchange uuid to jwt
 	router := auth_routes.InitAuthAppRouter(conf, userService, exc)

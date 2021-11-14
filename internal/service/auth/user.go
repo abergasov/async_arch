@@ -9,6 +9,8 @@ import (
 	"async_arch/internal/logger"
 	userRepo "async_arch/internal/repository/user"
 
+	"github.com/abergasov/schema_registry"
+
 	"github.com/abergasov/schema_registry/pkg/grpc/user"
 	"github.com/golang-jwt/jwt"
 	"github.com/segmentio/kafka-go"
@@ -21,13 +23,14 @@ const (
 )
 
 type UserService struct {
-	uRepo  userRepo.UserRepo
-	jwtKey []byte
-	broker *kafka.Writer
+	uRepo    userRepo.UserRepo
+	jwtKey   []byte
+	broker   *kafka.Writer
+	registry schema_registry.SchemaRegistry
 }
 
-func InitUserService(uRepo userRepo.UserRepo, kfk *kafka.Writer, jwtKey string) *UserService {
-	return &UserService{uRepo: uRepo, jwtKey: []byte(jwtKey), broker: kfk}
+func InitUserService(uRepo userRepo.UserRepo, regio schema_registry.SchemaRegistry, kfk *kafka.Writer, jwtKey string) *UserService {
+	return &UserService{uRepo: uRepo, jwtKey: []byte(jwtKey), broker: kfk, registry: regio}
 }
 
 func (u *UserService) Login(googleUser *entities.GoogleUser) (string, error) {
@@ -47,7 +50,11 @@ func (u *UserService) Login(googleUser *entities.GoogleUser) (string, error) {
 		}
 
 		// stream create event to broker
-		b, _ := json.Marshal(usr)
+		b, err := u.registry.EncodeUserStreamEvent(entities.UserCreatedEvent, 1, usr)
+		if err != nil {
+			logger.Error("error prepare message to broker", err)
+			return "", err
+		}
 		if err = u.broker.WriteMessages(context.Background(), kafka.Message{
 			Key:   []byte(entities.UserCreatedEvent),
 			Value: b,

@@ -64,6 +64,20 @@ services:
     networks:
       - app-network
 
+  billingDB:
+    image: postgres:14.0
+    env_file:
+      - configs/common_billing.env
+    container_name: arch_billing_db.sh
+    restart: always
+    tty: true
+    ports:
+      - 4668:5432
+    volumes:
+      - ./scripts/billing/schema.sql:/docker-entrypoint-initdb.d/1.sql
+    networks:
+      - app-network
+
 networks:
   app-network:
     driver: bridge

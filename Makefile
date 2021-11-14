@@ -8,7 +8,7 @@ stop:
 dev_up: stop
 	@echo "RUN dev docker-compose.yml "
 	docker-compose pull
-	docker-compose up --build authDB taskDB broker zookeeper
+	docker-compose up --build authDB taskDB broker zookeeper billingDB
 
 migrate_new:
 	migrate create -ext sql -dir migrations -seq data

@@ -13,6 +13,10 @@ export default defineConfig({
         target: 'http://localhost:8091',
         changeOrigin: true,
       },
+      '/api/v1/billing': {
+        target: 'http://localhost:8092',
+        changeOrigin: true,
+      },
     }
   },
   plugins: [vue()]
