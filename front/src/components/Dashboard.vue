@@ -9,10 +9,10 @@
                 <h1>User profile</h1>
               </div>
             </template>
-            <h4>ID: {{ user.public_id }}</h4>
-            <h4>Email: {{ user.user_mail }}</h4>
-            <h4>User name: {{ user.user_name }}</h4>
-            <h4>Role: {{ user.user_role }}</h4>
+            <h4>ID: {{ user.publicID }}</h4>
+            <h4>Email: {{ user.userMail }}</h4>
+            <h4>User name: {{ user.userName }}</h4>
+            <h4>Role: {{ user.userRole }}</h4>
             <hr>
             <p>
               Change role to
@@ -24,7 +24,7 @@
               <button @click="changeRole">change role</button>
               <br/>
               <br/>
-              <button v-if="user.user_role !== 'worker'" @click="assignTasks">assign tasks</button>
+              <button v-if="user.userRole !== 'worker'" @click="assignTasks">assign tasks</button>
             </p>
           </el-card>
         </el-col>
@@ -85,7 +85,7 @@ export default {
         title: "",
         desc: ""
       },
-      role: this.user.user_role,
+      role: this.user.userRole,
     };
   },
   methods: {

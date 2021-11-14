@@ -6,7 +6,7 @@ import (
 	"async_arch/internal/config"
 	"async_arch/internal/entities"
 	"async_arch/internal/logger"
-	task2 "async_arch/internal/repository/task"
+	tRepo "async_arch/internal/repository/task"
 	"async_arch/internal/repository/user"
 	"async_arch/internal/routes/task_routes"
 	"async_arch/internal/service/task"
@@ -28,7 +28,7 @@ func main() {
 	conn := database.InitDBConnect(&conf.ConfigDB)
 
 	userRepo := user.InitUserRepo(conn)
-	taskRepo := task2.InitTaskRepo(conn)
+	taskRepo := tRepo.InitTaskRepo(conn)
 	kfk := broker.InitKafkaConsumer(&conf.ConfigBroker, entities.UserCUDBrokerTopic)
 	task.InitUserTaskService(userRepo, kfk, conf.JWTKey)
 

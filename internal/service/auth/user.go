@@ -7,13 +7,11 @@ import (
 
 	"async_arch/internal/entities"
 	"async_arch/internal/logger"
-	"async_arch/internal/repository/user"
+	userRepo "async_arch/internal/repository/user"
 
-	"github.com/segmentio/kafka-go"
-
-	"github.com/google/uuid"
-
+	"github.com/abergasov/schema_registry/pkg/grpc/user"
 	"github.com/golang-jwt/jwt"
+	"github.com/segmentio/kafka-go"
 )
 
 const (
@@ -23,12 +21,12 @@ const (
 )
 
 type UserService struct {
-	uRepo  user.UserRepo
+	uRepo  userRepo.UserRepo
 	jwtKey []byte
 	broker *kafka.Writer
 }
 
-func InitUserService(uRepo user.UserRepo, kfk *kafka.Writer, jwtKey string) *UserService {
+func InitUserService(uRepo userRepo.UserRepo, kfk *kafka.Writer, jwtKey string) *UserService {
 	return &UserService{uRepo: uRepo, jwtKey: []byte(jwtKey), broker: kfk}
 }
 
@@ -70,7 +68,7 @@ func (u *UserService) registerUser(googleUser *entities.GoogleUser) error {
 	return nil
 }
 
-func (u *UserService) generateJWT(usr *entities.UserAccount) (string, error) {
+func (u *UserService) generateJWT(usr *user.UserAccountV1) (string, error) {
 	atClaims := entities.UserJWT{
 		usr.PublicID,
 		usr.Version,
@@ -87,7 +85,7 @@ func (u *UserService) generateJWT(usr *entities.UserAccount) (string, error) {
 	return jwtKey, nil
 }
 
-func (u *UserService) ChangeRole(publicID uuid.UUID, userVersion int, newRole string) (*entities.UserAccount, string, error) {
+func (u *UserService) ChangeRole(publicID string, userVersion int64, newRole string) (*user.UserAccountV1, string, error) {
 	usr, err := u.uRepo.ChangeRole(publicID, userVersion, newRole)
 	if err != nil {
 		logger.Error("error update user", err)
@@ -108,6 +106,6 @@ func (u *UserService) ChangeRole(publicID uuid.UUID, userVersion int, newRole st
 	return usr, jwtKey, err
 }
 
-func (u *UserService) GetUserInfo(publicID uuid.UUID, userVersion int) (*entities.UserAccount, error) {
+func (u *UserService) GetUserInfo(publicID string, userVersion int64) (*user.UserAccountV1, error) {
 	return u.uRepo.GetByPublicID(publicID, userVersion)
 }

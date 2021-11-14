@@ -3,6 +3,7 @@ module async_arch
 go 1.17
 
 require (
+	github.com/abergasov/schema_registry v0.0.0-20211114170432-fde46ba956dc
 	github.com/golang-jwt/jwt v3.2.2+incompatible
 	github.com/google/uuid v1.3.0
 	github.com/jmoiron/sqlx v1.3.4
@@ -16,7 +17,7 @@ require (
 
 require (
 	cloud.google.com/go v0.65.0 // indirect
-	github.com/golang/protobuf v1.4.2 // indirect
+	github.com/golang/protobuf v1.5.0 // indirect
 	github.com/golang/snappy v0.0.1 // indirect
 	github.com/klauspost/compress v1.9.8 // indirect
 	github.com/labstack/gommon v0.3.0 // indirect
@@ -33,5 +34,5 @@ require (
 	golang.org/x/text v0.3.7 // indirect
 	golang.org/x/time v0.0.0-20201208040808-7e3f01d25324 // indirect
 	google.golang.org/appengine v1.6.6 // indirect
-	google.golang.org/protobuf v1.25.0 // indirect
+	google.golang.org/protobuf v1.27.1 // indirect
 )

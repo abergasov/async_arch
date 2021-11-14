@@ -10,11 +10,11 @@ import (
 	"async_arch/internal/logger"
 	"async_arch/internal/storage/database"
 
-	"github.com/lib/pq"
-
-	"github.com/jmoiron/sqlx"
+	"github.com/abergasov/schema_registry/pkg/grpc/task"
 
 	"github.com/google/uuid"
+	"github.com/jmoiron/sqlx"
+	"github.com/lib/pq"
 )
 
 type TaskRepo struct {
@@ -25,8 +25,8 @@ func InitTaskRepo(conn database.DBConnector) *TaskRepo {
 	return &TaskRepo{conn: conn}
 }
 
-func (t *TaskRepo) GetByPublicID(taskID uuid.UUID) (*entities.Task, error) {
-	var tsk entities.Task
+func (t *TaskRepo) GetByPublicID(taskID string) (*task.TaskV1, error) {
+	var tsk task.TaskV1
 	err := t.conn.Client().QueryRowx(`SELECT t.*, ta.assigned_to, ta.assigned_at 
 		FROM tasks t
 		LEFT JOIN task_assignments ta ON ta.task_uuid = t.public_id
@@ -37,7 +37,7 @@ func (t *TaskRepo) GetByPublicID(taskID uuid.UUID) (*entities.Task, error) {
 	return &tsk, err
 }
 
-func (t *TaskRepo) CreateTask(taskAuthor uuid.UUID, taskTitle, taskDesc string) (*entities.Task, error) {
+func (t *TaskRepo) CreateTask(taskAuthor, taskTitle, taskDesc string) (*task.TaskV1, error) {
 	newTaskID := uuid.New()
 	assignCost, doneCost := t.calcCost()
 	if _, err := t.conn.Client().NamedExec("INSERT INTO tasks (public_id,author,title,description,status,assign_cost,done_cost,created_at) VALUES (:public_id,:author,:title,:description,:status,:assign_cost,:done_cost,:created_at)", map[string]interface{}{
@@ -53,14 +53,14 @@ func (t *TaskRepo) CreateTask(taskAuthor uuid.UUID, taskTitle, taskDesc string) 
 		logger.Error("error task insert", err)
 		return nil, err
 	}
-	return t.GetByPublicID(newTaskID)
+	return t.GetByPublicID(newTaskID.String())
 }
 
 func (t *TaskRepo) calcCost() (assignCost int64, doneCost int64) {
 	return int64(rand.Intn(20-1) + 1), int64(rand.Intn(20-1) + 1)
 }
 
-func (t *TaskRepo) GetAllTasks() ([]*entities.Task, error) {
+func (t *TaskRepo) GetAllTasks() ([]*task.TaskV1, error) {
 	rows, err := t.conn.Client().Queryx(`SELECT t.*, ta.assigned_to
 		FROM tasks t
 		LEFT JOIN task_assignments ta ON ta.task_uuid = t.public_id
@@ -68,7 +68,7 @@ func (t *TaskRepo) GetAllTasks() ([]*entities.Task, error) {
 	return t.getTasks(rows, err)
 }
 
-func (t *TaskRepo) GetUserTasks(userPublicID uuid.UUID) ([]*entities.Task, error) {
+func (t *TaskRepo) GetUserTasks(userPublicID string) ([]*task.TaskV1, error) {
 	rows, err := t.conn.Client().Queryx(`SELECT t.*, ta.assigned_to
 		FROM tasks t
 		LEFT JOIN task_assignments ta ON ta.task_uuid = t.public_id
@@ -76,15 +76,15 @@ func (t *TaskRepo) GetUserTasks(userPublicID uuid.UUID) ([]*entities.Task, error
 	return t.getTasks(rows, err)
 }
 
-func (t *TaskRepo) getTasks(rows *sqlx.Rows, err error) ([]*entities.Task, error) {
+func (t *TaskRepo) getTasks(rows *sqlx.Rows, err error) ([]*task.TaskV1, error) {
 	if err != nil {
 		logger.Error("error load tasks", err)
 		return nil, err
 	}
 	defer rows.Close()
-	result := make([]*entities.Task, 0, 100)
+	result := make([]*task.TaskV1, 0, 100)
 	for rows.Next() {
-		var tsk entities.Task
+		var tsk task.TaskV1
 		if err = rows.StructScan(&tsk); err != nil {
 			logger.Error("error scan task", err)
 			continue
@@ -94,7 +94,7 @@ func (t *TaskRepo) getTasks(rows *sqlx.Rows, err error) ([]*entities.Task, error
 	return result, err
 }
 
-func (t *TaskRepo) GetUnAssignedTasks() ([]*entities.Task, error) {
+func (t *TaskRepo) GetUnAssignedTasks() ([]*task.TaskV1, error) {
 	rows, err := t.conn.Client().Queryx(`SELECT t.*, ta.assigned_to, ta.assigned_at
 		FROM tasks t
 		LEFT JOIN task_assignments ta ON ta.task_uuid = t.public_id
@@ -103,10 +103,10 @@ func (t *TaskRepo) GetUnAssignedTasks() ([]*entities.Task, error) {
 		logger.Error("error load unassigned tasks", err)
 		return nil, err
 	}
-	result := make([]*entities.Task, 0, 1000)
+	result := make([]*task.TaskV1, 0, 1000)
 	defer rows.Close()
 	for rows.Next() {
-		var ts entities.Task
+		var ts task.TaskV1
 		if err = rows.StructScan(&ts); err != nil {
 			logger.Error("error parse unassigned task", err)
 			continue
@@ -155,7 +155,7 @@ func (t *TaskRepo) AssignTasks(assign []*entities.TaskAssignContainer) error {
 	return err
 }
 
-func (t *TaskRepo) FinishTask(taskPublicID uuid.UUID) error {
+func (t *TaskRepo) FinishTask(taskPublicID string) error {
 	_, err := t.conn.Client().Exec("UPDATE tasks SET status = $1 WHERE public_id = $2", entities.FinishTaskStatus, taskPublicID)
 	return err
 }

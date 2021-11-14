@@ -2,11 +2,13 @@ package task
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
 	"errors"
 	"math/rand"
 	"time"
+
+	"github.com/abergasov/schema_registry/pkg/grpc/task"
+	"github.com/abergasov/schema_registry/pkg/grpc/user"
 
 	"async_arch/internal/entities"
 	"async_arch/internal/logger"
@@ -18,17 +20,17 @@ import (
 
 type UserRepo interface {
 	GetActiveWorkers() ([]uuid.UUID, error)
-	GetUserByPublicID(publicID uuid.UUID, version int) (*entities.UserAccount, error)
+	GetByPublicID(publicID string, version int64) (*user.UserAccountV1, error)
 }
 
 type TaskRepo interface {
-	GetByPublicID(taskID uuid.UUID) (*entities.Task, error)
-	CreateTask(taskAuthor uuid.UUID, taskTitle, taskDesc string) (*entities.Task, error)
-	GetAllTasks() ([]*entities.Task, error)
-	GetUserTasks(userPublicID uuid.UUID) ([]*entities.Task, error)
-	GetUnAssignedTasks() ([]*entities.Task, error)
+	GetByPublicID(taskID string) (*task.TaskV1, error)
+	CreateTask(taskAuthor, taskTitle, taskDesc string) (*task.TaskV1, error)
+	GetAllTasks() ([]*task.TaskV1, error)
+	GetUserTasks(userPublicID string) ([]*task.TaskV1, error)
+	GetUnAssignedTasks() ([]*task.TaskV1, error)
 	AssignTasks(assign []*entities.TaskAssignContainer) error
-	FinishTask(taskPublicID uuid.UUID) error
+	FinishTask(taskPublicID string) error
 }
 
 type TaskManager struct {
@@ -45,13 +47,13 @@ func InitTaskManager(t TaskRepo, u UserRepo, kfk *kafka.Writer) *TaskManager {
 	}
 }
 
-func (t *TaskManager) CreateTask(taskAuthor uuid.UUID, taskTitle, taskDesc string) (*entities.Task, error) {
-	task, err := t.tRepo.CreateTask(taskAuthor, taskTitle, taskDesc)
+func (t *TaskManager) CreateTask(taskAuthor string, taskTitle, taskDesc string) (*task.TaskV1, error) {
+	tsk, err := t.tRepo.CreateTask(taskAuthor, taskTitle, taskDesc)
 	if err != nil {
 		logger.Error("error create task", err)
 		return nil, err
 	}
-	b, _ := json.Marshal(task)
+	b, _ := json.Marshal(tsk)
 	if err = t.broker.WriteMessages(context.Background(), kafka.Message{
 		Key:   []byte(entities.TaskCreatedEvent),
 		Value: b,
@@ -59,11 +61,11 @@ func (t *TaskManager) CreateTask(taskAuthor uuid.UUID, taskTitle, taskDesc strin
 		logger.Error("error stream task", err)
 		return nil, err
 	}
-	return task, nil
+	return tsk, nil
 }
 
-func (t *TaskManager) LoadTasks(userPublicID uuid.UUID, userVersion int) ([]*entities.Task, error) {
-	usr, err := t.uRepo.GetUserByPublicID(userPublicID, userVersion)
+func (t *TaskManager) LoadTasks(userPublicID string, userVersion int64) ([]*task.TaskV1, error) {
+	usr, err := t.uRepo.GetByPublicID(userPublicID, userVersion)
 	if err != nil {
 		return nil, err
 	}
@@ -73,8 +75,8 @@ func (t *TaskManager) LoadTasks(userPublicID uuid.UUID, userVersion int) ([]*ent
 	return t.tRepo.GetAllTasks()
 }
 
-func (t *TaskManager) AssignTasks(userPublicID uuid.UUID, userVersion int) ([]*entities.Task, error) {
-	usr, err := t.uRepo.GetUserByPublicID(userPublicID, userVersion)
+func (t *TaskManager) AssignTasks(userPublicID string, userVersion int64) ([]*task.TaskV1, error) {
+	usr, err := t.uRepo.GetByPublicID(userPublicID, userVersion)
 	if err != nil {
 		return nil, err
 	}
@@ -109,7 +111,7 @@ func (t *TaskManager) AssignTasks(userPublicID uuid.UUID, userVersion int) ([]*e
 	for i := range tasks {
 		b, _ := json.Marshal(tasks[i])
 		messages = append(messages, kafka.Message{
-			Key:   []byte(entities.TaskAssignedEvent),
+			Key:   []byte(entities.TaskCreatedEvent),
 			Value: b,
 		})
 	}
@@ -121,22 +123,22 @@ func (t *TaskManager) AssignTasks(userPublicID uuid.UUID, userVersion int) ([]*e
 	return t.LoadTasks(userPublicID, userVersion)
 }
 
-func (t *TaskManager) assignTasks(userIDs []uuid.UUID, targetTasks []*entities.Task) error {
+func (t *TaskManager) assignTasks(userIDs []uuid.UUID, targetTasks []*task.TaskV1) error {
 	assigned := make([]*entities.TaskAssignContainer, 0, len(targetTasks))
 	for i := range targetTasks {
 		workerID := userIDs[rand.Intn(len(userIDs)-0)+0]
 		assigned = append(assigned, &entities.TaskAssignContainer{
 			TaskPublicID: targetTasks[i].PublicID,
-			UserPublicID: workerID,
+			UserPublicID: workerID.String(),
 		})
-		targetTasks[i].AssignedAt = sql.NullTime{Time: time.Now()}
-		targetTasks[i].AssignedTo = workerID
+		targetTasks[i].AssignedAt = time.Now().Format(time.RFC3339)
+		targetTasks[i].AssignedTo = workerID.String()
 	}
 	return t.tRepo.AssignTasks(assigned)
 }
 
-func (t *TaskManager) Finish(taskPublicID, userPublicID uuid.UUID, userVersion int) error {
-	usr, err := t.uRepo.GetUserByPublicID(userPublicID, userVersion)
+func (t *TaskManager) Finish(taskPublicID, userPublicID string, userVersion int64) error {
+	usr, err := t.uRepo.GetByPublicID(userPublicID, userVersion)
 	if err != nil {
 		return err
 	}

@@ -7,13 +7,14 @@ import (
 	"async_arch/internal/entities"
 	"async_arch/internal/logger"
 
+	"github.com/abergasov/schema_registry/pkg/grpc/user"
 	"github.com/segmentio/kafka-go"
 	"go.uber.org/zap"
 )
 
 type TaskUserRepo interface {
-	CreateUser(account *entities.UserAccount) error
-	UpdateUser(account *entities.UserAccount) error
+	CreateUser(account *user.UserAccountV1) error
+	UpdateUser(account *user.UserAccountV1) error
 }
 
 type UserTaskService struct {
@@ -48,7 +49,7 @@ func (u *UserTaskService) readUserCUD() {
 }
 
 func (u *UserTaskService) createUser(rawData []byte) {
-	var usr entities.UserAccount
+	var usr user.UserAccountV1
 	if err := json.Unmarshal(rawData, &usr); err != nil {
 		logger.Error("error parse user from broker", err)
 		return
@@ -57,11 +58,11 @@ func (u *UserTaskService) createUser(rawData []byte) {
 		logger.Error("error parse user from broker", err)
 		return
 	}
-	logger.Info("new user created", zap.String("uuid", usr.PublicID.String()))
+	logger.Info("new user created", zap.String("uuid", usr.PublicID))
 }
 
 func (u *UserTaskService) updateUser(rawData []byte) {
-	var usr entities.UserAccount
+	var usr user.UserAccountV1
 	if err := json.Unmarshal(rawData, &usr); err != nil {
 		logger.Error("error parse user from broker", err)
 		return
@@ -70,5 +71,5 @@ func (u *UserTaskService) updateUser(rawData []byte) {
 		logger.Error("error parse user from broker", err)
 		return
 	}
-	logger.Info("user updated", zap.String("uuid", usr.PublicID.String()))
+	logger.Info("user updated", zap.String("uuid", usr.PublicID))
 }
