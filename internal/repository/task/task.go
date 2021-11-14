@@ -1,6 +1,7 @@
 package task
 
 import (
+	"database/sql"
 	"fmt"
 	"math/rand"
 	"strings"
@@ -27,10 +28,14 @@ func InitTaskRepo(conn database.DBConnector) *TaskRepo {
 
 func (t *TaskRepo) GetByPublicID(taskID string) (*task.TaskV1, error) {
 	var tsk task.TaskV1
-	err := t.conn.Client().QueryRowx(`SELECT t.*, ta.assigned_to, ta.assigned_at 
+	var assignedTo, assignedAt sql.NullString
+	err := t.conn.Client().QueryRowx(`SELECT t.public_id,t.author,t.title,t.description,t.assign_cost,t.done_cost,t.status,t.created_at, ta.assigned_to, ta.assigned_at 
 		FROM tasks t
 		LEFT JOIN task_assignments ta ON ta.task_uuid = t.public_id
-		WHERE public_id = $1`, taskID).StructScan(&tsk)
+		WHERE public_id = $1`, taskID).
+		Scan(&tsk.PublicID, &tsk.Author, &tsk.Title, &tsk.Description, &tsk.AssignCost, &tsk.DoneCost, &tsk.Status, &tsk.CreatedAt, &assignedTo, &assignedAt)
+	tsk.AssignedTo = assignedTo.String
+	tsk.AssignedAt = assignedAt.String
 	if err != nil {
 		logger.Error("error load task", err)
 	}
@@ -61,7 +66,7 @@ func (t *TaskRepo) calcCost() (assignCost int64, doneCost int64) {
 }
 
 func (t *TaskRepo) GetAllTasks() ([]*task.TaskV1, error) {
-	rows, err := t.conn.Client().Queryx(`SELECT t.*, ta.assigned_to
+	rows, err := t.conn.Client().Queryx(`SELECT t.public_id,t.author,t.title,t.description,t.assign_cost,t.done_cost,t.status,t.created_at, ta.assigned_to
 		FROM tasks t
 		LEFT JOIN task_assignments ta ON ta.task_uuid = t.public_id
 		WHERE DATE(t.created_at) = CURRENT_DATE`)
@@ -69,7 +74,7 @@ func (t *TaskRepo) GetAllTasks() ([]*task.TaskV1, error) {
 }
 
 func (t *TaskRepo) GetUserTasks(userPublicID string) ([]*task.TaskV1, error) {
-	rows, err := t.conn.Client().Queryx(`SELECT t.*, ta.assigned_to
+	rows, err := t.conn.Client().Queryx(`SELECT t.public_id,t.author,t.title,t.description,t.assign_cost,t.done_cost,t.status,t.created_at, ta.assigned_to
 		FROM tasks t
 		LEFT JOIN task_assignments ta ON ta.task_uuid = t.public_id
 		WHERE (ta.assigned_to = $1 OR t.author = $2) AND DATE(t.created_at) = CURRENT_DATE`, userPublicID, userPublicID)
@@ -85,17 +90,19 @@ func (t *TaskRepo) getTasks(rows *sqlx.Rows, err error) ([]*task.TaskV1, error) 
 	result := make([]*task.TaskV1, 0, 100)
 	for rows.Next() {
 		var tsk task.TaskV1
-		if err = rows.StructScan(&tsk); err != nil {
+		var assignedTo sql.NullString
+		if err = rows.Scan(&tsk.PublicID, &tsk.Author, &tsk.Title, &tsk.Description, &tsk.AssignCost, &tsk.DoneCost, &tsk.Status, &tsk.CreatedAt, &assignedTo); err != nil {
 			logger.Error("error scan task", err)
 			continue
 		}
+		tsk.AssignedTo = assignedTo.String
 		result = append(result, &tsk)
 	}
 	return result, err
 }
 
 func (t *TaskRepo) GetUnAssignedTasks() ([]*task.TaskV1, error) {
-	rows, err := t.conn.Client().Queryx(`SELECT t.*, ta.assigned_to, ta.assigned_at
+	rows, err := t.conn.Client().Queryx(`SELECT t.public_id,t.author,t.title,t.description,t.assign_cost,t.done_cost,t.status,t.created_at, ta.assigned_to, ta.assigned_at
 		FROM tasks t
 		LEFT JOIN task_assignments ta ON ta.task_uuid = t.public_id
 		WHERE assigned_to IS NULL AND DATE(created_at) = CURRENT_DATE`)
@@ -105,13 +112,17 @@ func (t *TaskRepo) GetUnAssignedTasks() ([]*task.TaskV1, error) {
 	}
 	result := make([]*task.TaskV1, 0, 1000)
 	defer rows.Close()
+	var assignedTo, assignedAt sql.NullString
 	for rows.Next() {
-		var ts task.TaskV1
-		if err = rows.StructScan(&ts); err != nil {
+		var tsk task.TaskV1
+
+		if err = rows.Scan(&tsk.PublicID, &tsk.Author, &tsk.Title, &tsk.Description, &tsk.AssignCost, &tsk.DoneCost, &tsk.Status, &tsk.CreatedAt, &assignedTo, &assignedAt); err != nil {
 			logger.Error("error parse unassigned task", err)
 			continue
 		}
-		result = append(result, &ts)
+		tsk.AssignedTo = assignedTo.String
+		tsk.AssignedAt = assignedAt.String
+		result = append(result, &tsk)
 	}
 	return result, nil
 }

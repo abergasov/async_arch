@@ -59,7 +59,7 @@ const createTask = (payload) => {
         }
         ElNotification({
           title: 'Task created',
-          message: h('p', { style: 'color: green' }, 'Task created:' + data.data.public_id),
+          message: h('p', { style: 'color: green' }, 'Task created:' + data.data.publicID),
         });
         loadTasks();
       },

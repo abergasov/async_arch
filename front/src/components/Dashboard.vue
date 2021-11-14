@@ -53,9 +53,9 @@
           <el-card class="box-card">
             <el-table :data="tasks" style="width: 100%"
                       :row-class-name="tableRowClassName">
-              <el-table-column prop="public_id" label="public_id" width="280" />
+              <el-table-column prop="publicID" label="public_id" width="280" />
               <el-table-column prop="title" label="title" width="180" />
-              <el-table-column prop="created_at" label="created_at" />
+              <el-table-column prop="createdAt" label="created_at" />
               <el-table-column prop="status" label="status" />
               <el-table-column label="Operations">
                 <template #default="scope">
@@ -90,7 +90,7 @@ export default {
   },
   methods: {
     handleEdit(row) {
-      this.$emit("done_tasks", {task_id: row.public_id});
+      this.$emit("done_tasks", {task_id: row.publicID});
     },
     tableRowClassName({ row, rowIndex }) {
       if (row.assigned_to === this.$store.state.user) {
@@ -99,7 +99,7 @@ export default {
       return ''
     },
     showBtn(row) {
-      if (row.assigned_to === this.$store.state.user && row.status !== "done") {
+      if (row.assignedTo === this.$store.state.user && row.status !== "done") {
         return true
       }
       return false

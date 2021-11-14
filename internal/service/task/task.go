@@ -142,8 +142,12 @@ func (t *TaskManager) Finish(taskPublicID, userPublicID string, userVersion int6
 	if err != nil {
 		return err
 	}
-	task, err := t.tRepo.GetByPublicID(taskPublicID)
-	if task.AssignedTo != usr.PublicID {
+	targetTask, err := t.tRepo.GetByPublicID(taskPublicID)
+	if err != nil {
+		logger.Error("error load task by publicID", err)
+		return err
+	}
+	if targetTask.AssignedTo != usr.PublicID {
 		err = errors.New("task not assigned to this user")
 		return err
 	}
@@ -151,7 +155,7 @@ func (t *TaskManager) Finish(taskPublicID, userPublicID string, userVersion int6
 		logger.Error("erorr finish task", err)
 		return err
 	}
-	b, _ := json.Marshal(task)
+	b, _ := json.Marshal(targetTask)
 	if err = t.broker.WriteMessages(context.Background(), kafka.Message{
 		Key:   []byte(entities.TaskFinishEvent),
 		Value: b,
