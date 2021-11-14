@@ -24,7 +24,7 @@ func (ar *TaskAppRouter) createTask(c echo.Context) error {
 	}
 	user, _ := c.Get("user").(*jwt.Token)
 	claims, _ := user.Claims.(*entities.UserJWT)
-	newTask, err := ar.tManager.CreateTask(claims.UserID, t.Task.Title, t.Task.Title)
+	newTask, err := ar.tManager.CreateTask(claims.UserID, t.Task.Title, t.Task.Desc)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, entities.ErrorRequest{})
 	}

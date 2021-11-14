@@ -1,13 +1,15 @@
 package entities
 
 const (
-	TaskCUDBrokerTopic = "taskStream"
-	TaskCreatedEvent   = "TaskCreated"
-	TaskAssignedEvent  = "TaskAssigned"
-	TaskFinishEvent    = "TaskFinished"
-	NewTaskStatus      = "new"
-	AssignedTaskStatus = "assigned"
-	FinishTaskStatus   = "done"
+	TaskCUDBrokerTopic       = "taskStream"
+	TaskCreatedEvent         = "TaskCreated"
+	TaskAssignedEvent        = "TaskAssigned"
+	TaskFinishEvent          = "TaskFinished"
+	NewTaskStatus            = "new"
+	AssignedTaskStatus       = "assigned"
+	PublicAssignedTaskStatus = "птичка в клетке"
+	FinishTaskStatus         = "done"
+	PublicFinishTaskStatus   = "просо в миске"
 )
 
 //type Task struct {

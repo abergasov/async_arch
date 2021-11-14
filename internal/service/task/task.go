@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"errors"
 	"math/rand"
+	"regexp"
+	"strings"
 	"time"
 
 	"github.com/abergasov/schema_registry/pkg/grpc/task"
@@ -24,14 +26,16 @@ type UserRepo interface {
 }
 
 type TaskRepo interface {
-	GetByPublicID(taskID string) (*task.TaskV1, error)
-	CreateTask(taskAuthor, taskTitle, taskDesc string) (*task.TaskV1, error)
-	GetAllTasks() ([]*task.TaskV1, error)
-	GetUserTasks(userPublicID string) ([]*task.TaskV1, error)
-	GetUnAssignedTasks() ([]*task.TaskV1, error)
+	GetByPublicID(taskID string) (*task.TaskV2, error)
+	CreateTask(taskAuthor, taskTitle, taskDesc, trackerID string) (*task.TaskV2, error)
+	GetAllTasks() ([]*task.TaskV2, error)
+	GetUserTasks(userPublicID string) ([]*task.TaskV2, error)
+	GetUnAssignedTasks() ([]*task.TaskV2, error)
 	AssignTasks(assign []*entities.TaskAssignContainer) error
 	FinishTask(taskPublicID string) error
 }
+
+var trackerRe = regexp.MustCompile(`(?m)(\[[^\]\[]*)+([^\]\[]*\])+`)
 
 type TaskManager struct {
 	tRepo  TaskRepo
@@ -47,8 +51,14 @@ func InitTaskManager(t TaskRepo, u UserRepo, kfk *kafka.Writer) *TaskManager {
 	}
 }
 
-func (t *TaskManager) CreateTask(taskAuthor string, taskTitle, taskDesc string) (*task.TaskV1, error) {
-	tsk, err := t.tRepo.CreateTask(taskAuthor, taskTitle, taskDesc)
+func (t *TaskManager) CreateTask(taskAuthor string, taskTitle, taskDesc string) (*task.TaskV2, error) {
+	trackerID := "" //todoit
+	matches := trackerRe.FindAllString(taskTitle, -1)
+	if len(matches) > 0 {
+		trackerID = matches[0]
+		taskTitle = strings.ReplaceAll(taskTitle, trackerID, "")
+	}
+	tsk, err := t.tRepo.CreateTask(taskAuthor, taskTitle, taskDesc, trackerID)
 	if err != nil {
 		logger.Error("error create task", err)
 		return nil, err
@@ -64,7 +74,7 @@ func (t *TaskManager) CreateTask(taskAuthor string, taskTitle, taskDesc string) 
 	return tsk, nil
 }
 
-func (t *TaskManager) LoadTasks(userPublicID string, userVersion int64) ([]*task.TaskV1, error) {
+func (t *TaskManager) LoadTasks(userPublicID string, userVersion int64) ([]*task.TaskV2, error) {
 	usr, err := t.uRepo.GetByPublicID(userPublicID, userVersion)
 	if err != nil {
 		return nil, err
@@ -75,7 +85,7 @@ func (t *TaskManager) LoadTasks(userPublicID string, userVersion int64) ([]*task
 	return t.tRepo.GetAllTasks()
 }
 
-func (t *TaskManager) AssignTasks(userPublicID string, userVersion int64) ([]*task.TaskV1, error) {
+func (t *TaskManager) AssignTasks(userPublicID string, userVersion int64) ([]*task.TaskV2, error) {
 	usr, err := t.uRepo.GetByPublicID(userPublicID, userVersion)
 	if err != nil {
 		return nil, err
@@ -123,7 +133,7 @@ func (t *TaskManager) AssignTasks(userPublicID string, userVersion int64) ([]*ta
 	return t.LoadTasks(userPublicID, userVersion)
 }
 
-func (t *TaskManager) assignTasks(userIDs []uuid.UUID, targetTasks []*task.TaskV1) error {
+func (t *TaskManager) assignTasks(userIDs []uuid.UUID, targetTasks []*task.TaskV2) error {
 	assigned := make([]*entities.TaskAssignContainer, 0, len(targetTasks))
 	for i := range targetTasks {
 		workerID := userIDs[rand.Intn(len(userIDs)-0)+0]

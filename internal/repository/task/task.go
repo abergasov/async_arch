@@ -26,26 +26,28 @@ func InitTaskRepo(conn database.DBConnector) *TaskRepo {
 	return &TaskRepo{conn: conn}
 }
 
-func (t *TaskRepo) GetByPublicID(taskID string) (*task.TaskV1, error) {
-	var tsk task.TaskV1
-	var assignedTo, assignedAt sql.NullString
-	err := t.conn.Client().QueryRowx(`SELECT t.public_id,t.author,t.title,t.description,t.assign_cost,t.done_cost,t.status,t.created_at, ta.assigned_to, ta.assigned_at 
+func (t *TaskRepo) GetByPublicID(taskID string) (*task.TaskV2, error) {
+	var tsk task.TaskV2
+	var assignedTo, assignedAt, trackerID, publicStatus sql.NullString
+	err := t.conn.Client().QueryRowx(`SELECT t.tracker_id, t.public_id,t.author,t.title,t.description,t.assign_cost,t.done_cost,t.status,t.public_status,t.created_at, ta.assigned_to, ta.assigned_at 
 		FROM tasks t
 		LEFT JOIN task_assignments ta ON ta.task_uuid = t.public_id
 		WHERE public_id = $1`, taskID).
-		Scan(&tsk.PublicID, &tsk.Author, &tsk.Title, &tsk.Description, &tsk.AssignCost, &tsk.DoneCost, &tsk.Status, &tsk.CreatedAt, &assignedTo, &assignedAt)
+		Scan(&trackerID, &tsk.PublicID, &tsk.Author, &tsk.Title, &tsk.Description, &tsk.AssignCost, &tsk.DoneCost, &tsk.Status, &publicStatus, &tsk.CreatedAt, &assignedTo, &assignedAt)
 	tsk.AssignedTo = assignedTo.String
 	tsk.AssignedAt = assignedAt.String
+	tsk.PublicStatus = publicStatus.String
+	tsk.JiraID = trackerID.String
 	if err != nil {
 		logger.Error("error load task", err)
 	}
 	return &tsk, err
 }
 
-func (t *TaskRepo) CreateTask(taskAuthor, taskTitle, taskDesc string) (*task.TaskV1, error) {
+func (t *TaskRepo) CreateTask(taskAuthor, taskTitle, taskDesc, trackerID string) (*task.TaskV2, error) {
 	newTaskID := uuid.New()
 	assignCost, doneCost := t.calcCost()
-	if _, err := t.conn.Client().NamedExec("INSERT INTO tasks (public_id,author,title,description,status,assign_cost,done_cost,created_at) VALUES (:public_id,:author,:title,:description,:status,:assign_cost,:done_cost,:created_at)", map[string]interface{}{
+	if _, err := t.conn.Client().NamedExec("INSERT INTO tasks (public_id,author,title,description,status,assign_cost,done_cost,created_at,tracker_id) VALUES (:public_id,:author,:title,:description,:status,:assign_cost,:done_cost,:created_at,:tracker_id)", map[string]interface{}{
 		"public_id":   newTaskID,
 		"author":      taskAuthor,
 		"title":       taskTitle,
@@ -54,6 +56,7 @@ func (t *TaskRepo) CreateTask(taskAuthor, taskTitle, taskDesc string) (*task.Tas
 		"assign_cost": assignCost,
 		"created_at":  time.Now(),
 		"done_cost":   doneCost,
+		"tracker_id":  trackerID,
 	}); err != nil {
 		logger.Error("error task insert", err)
 		return nil, err
@@ -65,44 +68,46 @@ func (t *TaskRepo) calcCost() (assignCost int64, doneCost int64) {
 	return int64(rand.Intn(20-1) + 1), int64(rand.Intn(20-1) + 1)
 }
 
-func (t *TaskRepo) GetAllTasks() ([]*task.TaskV1, error) {
-	rows, err := t.conn.Client().Queryx(`SELECT t.public_id,t.author,t.title,t.description,t.assign_cost,t.done_cost,t.status,t.created_at, ta.assigned_to
+func (t *TaskRepo) GetAllTasks() ([]*task.TaskV2, error) {
+	rows, err := t.conn.Client().Queryx(`SELECT t.tracker_id,t.public_id,t.author,t.title,t.description,t.assign_cost,t.done_cost,t.status,t.public_status,t.created_at, ta.assigned_to
 		FROM tasks t
 		LEFT JOIN task_assignments ta ON ta.task_uuid = t.public_id
 		WHERE DATE(t.created_at) = CURRENT_DATE`)
 	return t.getTasks(rows, err)
 }
 
-func (t *TaskRepo) GetUserTasks(userPublicID string) ([]*task.TaskV1, error) {
-	rows, err := t.conn.Client().Queryx(`SELECT t.public_id,t.author,t.title,t.description,t.assign_cost,t.done_cost,t.status,t.created_at, ta.assigned_to
+func (t *TaskRepo) GetUserTasks(userPublicID string) ([]*task.TaskV2, error) {
+	rows, err := t.conn.Client().Queryx(`SELECT t.tracker_id,t.public_id,t.author,t.title,t.description,t.assign_cost,t.done_cost,t.status,t.public_status,t.created_at, ta.assigned_to
 		FROM tasks t
 		LEFT JOIN task_assignments ta ON ta.task_uuid = t.public_id
 		WHERE (ta.assigned_to = $1 OR t.author = $2) AND DATE(t.created_at) = CURRENT_DATE`, userPublicID, userPublicID)
 	return t.getTasks(rows, err)
 }
 
-func (t *TaskRepo) getTasks(rows *sqlx.Rows, err error) ([]*task.TaskV1, error) {
+func (t *TaskRepo) getTasks(rows *sqlx.Rows, err error) ([]*task.TaskV2, error) {
 	if err != nil {
 		logger.Error("error load tasks", err)
 		return nil, err
 	}
 	defer rows.Close()
-	result := make([]*task.TaskV1, 0, 100)
+	result := make([]*task.TaskV2, 0, 100)
 	for rows.Next() {
-		var tsk task.TaskV1
-		var assignedTo sql.NullString
-		if err = rows.Scan(&tsk.PublicID, &tsk.Author, &tsk.Title, &tsk.Description, &tsk.AssignCost, &tsk.DoneCost, &tsk.Status, &tsk.CreatedAt, &assignedTo); err != nil {
+		var tsk task.TaskV2
+		var assignedTo, trackerID, publicStatus sql.NullString
+		if err = rows.Scan(&trackerID, &tsk.PublicID, &tsk.Author, &tsk.Title, &tsk.Description, &tsk.AssignCost, &tsk.DoneCost, &tsk.Status, &publicStatus, &tsk.CreatedAt, &assignedTo); err != nil {
 			logger.Error("error scan task", err)
 			continue
 		}
 		tsk.AssignedTo = assignedTo.String
+		tsk.JiraID = trackerID.String
+		tsk.PublicStatus = publicStatus.String
 		result = append(result, &tsk)
 	}
 	return result, err
 }
 
-func (t *TaskRepo) GetUnAssignedTasks() ([]*task.TaskV1, error) {
-	rows, err := t.conn.Client().Queryx(`SELECT t.public_id,t.author,t.title,t.description,t.assign_cost,t.done_cost,t.status,t.created_at, ta.assigned_to, ta.assigned_at
+func (t *TaskRepo) GetUnAssignedTasks() ([]*task.TaskV2, error) {
+	rows, err := t.conn.Client().Queryx(`SELECT t.tracker_id,t.public_id,t.author,t.title,t.description,t.assign_cost,t.done_cost,t.status,t.created_at, ta.assigned_to, ta.assigned_at
 		FROM tasks t
 		LEFT JOIN task_assignments ta ON ta.task_uuid = t.public_id
 		WHERE assigned_to IS NULL AND DATE(created_at) = CURRENT_DATE`)
@@ -110,18 +115,19 @@ func (t *TaskRepo) GetUnAssignedTasks() ([]*task.TaskV1, error) {
 		logger.Error("error load unassigned tasks", err)
 		return nil, err
 	}
-	result := make([]*task.TaskV1, 0, 1000)
+	result := make([]*task.TaskV2, 0, 1000)
 	defer rows.Close()
-	var assignedTo, assignedAt sql.NullString
+	var assignedTo, assignedAt, trackerID sql.NullString
 	for rows.Next() {
-		var tsk task.TaskV1
+		var tsk task.TaskV2
 
-		if err = rows.Scan(&tsk.PublicID, &tsk.Author, &tsk.Title, &tsk.Description, &tsk.AssignCost, &tsk.DoneCost, &tsk.Status, &tsk.CreatedAt, &assignedTo, &assignedAt); err != nil {
+		if err = rows.Scan(&trackerID, &tsk.PublicID, &tsk.Author, &tsk.Title, &tsk.Description, &tsk.AssignCost, &tsk.DoneCost, &tsk.Status, &tsk.CreatedAt, &assignedTo, &assignedAt); err != nil {
 			logger.Error("error parse unassigned task", err)
 			continue
 		}
 		tsk.AssignedTo = assignedTo.String
 		tsk.AssignedAt = assignedAt.String
+		tsk.JiraID = trackerID.String
 		result = append(result, &tsk)
 	}
 	return result, nil
@@ -156,8 +162,9 @@ func (t *TaskRepo) AssignTasks(assign []*entities.TaskAssignContainer) error {
 		return err
 	}
 	_, err = t.conn.Client().Exec(
-		"UPDATE tasks SET status = $1 WHERE public_id = ANY ($2)",
+		"UPDATE tasks SET status = $1, public_status = $2 WHERE public_id = ANY ($3)",
 		entities.AssignedTaskStatus,
+		entities.PublicAssignedTaskStatus,
 		pq.Array(taskUUIDs),
 	)
 	if err != nil {
@@ -167,6 +174,11 @@ func (t *TaskRepo) AssignTasks(assign []*entities.TaskAssignContainer) error {
 }
 
 func (t *TaskRepo) FinishTask(taskPublicID string) error {
-	_, err := t.conn.Client().Exec("UPDATE tasks SET status = $1 WHERE public_id = $2", entities.FinishTaskStatus, taskPublicID)
+	_, err := t.conn.Client().Exec(
+		"UPDATE tasks SET status = $1, public_status = $2 WHERE public_id = $3",
+		entities.FinishTaskStatus,
+		entities.PublicFinishTaskStatus,
+		taskPublicID,
+	)
 	return err
 }

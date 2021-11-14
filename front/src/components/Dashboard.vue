@@ -55,8 +55,9 @@
                       :row-class-name="tableRowClassName">
               <el-table-column prop="publicID" label="public_id" width="280" />
               <el-table-column prop="title" label="title" width="180" />
+              <el-table-column prop="jiraID" label="jiraID" width="180" />
               <el-table-column prop="createdAt" label="created_at" />
-              <el-table-column prop="status" label="status" />
+              <el-table-column prop="publicStatus" label="status" />
               <el-table-column label="Operations">
                 <template #default="scope">
                   <el-button v-if="showBtn(scope.row)" size="mini" @click="handleEdit(scope.row)"

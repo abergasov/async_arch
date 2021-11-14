@@ -81,7 +81,13 @@ const loadTasks = () => {
 
 const finishTask = (payload) => {
   askBackend("task/finish", payload).then(
-      data => {loadTasks();},
+      data => {
+        ElNotification({
+          title: 'Task completed',
+          message: h('p', { style: 'color: green' }, 'Task completed:' + payload.task_id),
+        });
+        loadTasks();
+        },
       err => console.error(err),
   )
 }

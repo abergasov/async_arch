@@ -38,7 +38,9 @@ create table tasks
     assign_cost int,
     done_cost int,
     status varchar(10),
-    created_at timestamp
+    created_at timestamp,
+    tracker_id    varchar(50),
+    public_status varchar(50)
 );
 
 create index tasks_author_index
