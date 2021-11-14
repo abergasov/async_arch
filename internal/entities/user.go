@@ -6,7 +6,7 @@ import (
 )
 
 const (
-	UserCUDBrokerTopic = "userCUD"
+	UserCUDBrokerTopic = "userStream"
 	UserCreatedEvent   = "UserCreated"
 	UserUpdatedEvent   = "UserUpdated"
 )

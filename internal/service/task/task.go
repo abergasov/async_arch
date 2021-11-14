@@ -22,13 +22,13 @@ type UserRepo interface {
 }
 
 type TaskRepo interface {
-	GetTaskByPublicID(taskID uuid.UUID) (*entities.Task, error)
+	GetByPublicID(taskID uuid.UUID) (*entities.Task, error)
 	CreateTask(taskAuthor uuid.UUID, taskTitle, taskDesc string) (*entities.Task, error)
 	GetAllTasks() ([]*entities.Task, error)
 	GetUserTasks(userPublicID uuid.UUID) ([]*entities.Task, error)
 	GetUnAssignedTasks() ([]*entities.Task, error)
 	AssignTasks(assign []*entities.TaskAssignContainer) error
-	DoneTask(taskPublicID uuid.UUID) error
+	FinishTask(taskPublicID uuid.UUID) error
 }
 
 type TaskManager struct {
@@ -135,17 +135,17 @@ func (t *TaskManager) assignTasks(userIDs []uuid.UUID, targetTasks []*entities.T
 	return t.tRepo.AssignTasks(assigned)
 }
 
-func (t *TaskManager) DoneTasks(taskPublicID, userPublicID uuid.UUID, userVersion int) error {
+func (t *TaskManager) Finish(taskPublicID, userPublicID uuid.UUID, userVersion int) error {
 	usr, err := t.uRepo.GetUserByPublicID(userPublicID, userVersion)
 	if err != nil {
 		return err
 	}
-	task, err := t.tRepo.GetTaskByPublicID(taskPublicID)
+	task, err := t.tRepo.GetByPublicID(taskPublicID)
 	if task.AssignedTo != usr.PublicID {
 		err = errors.New("task not assigned to this user")
 		return err
 	}
-	if err = t.tRepo.DoneTask(taskPublicID); err != nil {
+	if err = t.tRepo.FinishTask(taskPublicID); err != nil {
 		logger.Error("erorr finish task", err)
 		return err
 	}

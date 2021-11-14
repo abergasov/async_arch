@@ -25,7 +25,7 @@ func InitTaskRepo(conn database.DBConnector) *TaskRepo {
 	return &TaskRepo{conn: conn}
 }
 
-func (t *TaskRepo) GetTaskByPublicID(taskID uuid.UUID) (*entities.Task, error) {
+func (t *TaskRepo) GetByPublicID(taskID uuid.UUID) (*entities.Task, error) {
 	var tsk entities.Task
 	err := t.conn.Client().QueryRowx(`SELECT t.*, ta.assigned_to, ta.assigned_at 
 		FROM tasks t
@@ -53,7 +53,7 @@ func (t *TaskRepo) CreateTask(taskAuthor uuid.UUID, taskTitle, taskDesc string) 
 		logger.Error("error task insert", err)
 		return nil, err
 	}
-	return t.GetTaskByPublicID(newTaskID)
+	return t.GetByPublicID(newTaskID)
 }
 
 func (t *TaskRepo) calcCost() (assignCost int64, doneCost int64) {
@@ -155,7 +155,7 @@ func (t *TaskRepo) AssignTasks(assign []*entities.TaskAssignContainer) error {
 	return err
 }
 
-func (t *TaskRepo) DoneTask(taskPublicID uuid.UUID) error {
+func (t *TaskRepo) FinishTask(taskPublicID uuid.UUID) error {
 	_, err := t.conn.Client().Exec("UPDATE tasks SET status = $1 WHERE public_id = $2", entities.FinishTaskStatus, taskPublicID)
 	return err
 }

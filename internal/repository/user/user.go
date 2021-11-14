@@ -14,7 +14,7 @@ import (
 type UserRepo interface {
 	GetUserByMail(email string) (usr *entities.UserAccount, err error)
 	AddUser(googleUser *entities.GoogleUser, userRole string) error
-	GetUserByPublicID(publicID uuid.UUID, version int) (*entities.UserAccount, error)
+	GetByPublicID(publicID uuid.UUID, version int) (*entities.UserAccount, error)
 	ChangeRole(publicID uuid.UUID, version int, role string) (*entities.UserAccount, error)
 }
 
@@ -54,7 +54,7 @@ func (u *User) AddUser(googleUser *entities.GoogleUser, userRole string) error {
 	return nil
 }
 
-func (u *User) GetUserByPublicID(publicID uuid.UUID, version int) (*entities.UserAccount, error) {
+func (u *User) GetByPublicID(publicID uuid.UUID, version int) (*entities.UserAccount, error) {
 	sqlS := "SELECT user_id, public_id, user_mail, user_name, user_version, user_role, user_role, active FROM users WHERE public_id = $1 AND user_version = $2"
 	var usr entities.UserAccount
 	err := u.conn.Client().QueryRowx(sqlS, publicID, version).StructScan(&usr)
@@ -74,7 +74,7 @@ func (u *User) ChangeRole(publicID uuid.UUID, version int, role string) (*entiti
 		logger.Error("error change role", err)
 		return nil, err
 	}
-	return u.GetUserByPublicID(publicID, version+1)
+	return u.GetByPublicID(publicID, version+1)
 }
 
 func (u *User) CreateUser(account *entities.UserAccount) error {

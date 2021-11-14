@@ -53,7 +53,7 @@ func (ar *TaskAppRouter) assignFreeTasks(c echo.Context) error {
 	return c.JSON(http.StatusOK, map[string]interface{}{"ok": true, "data": tasks})
 }
 
-func (ar *TaskAppRouter) doneTask(c echo.Context) error {
+func (ar *TaskAppRouter) finish(c echo.Context) error {
 	user, _ := c.Get("user").(*jwt.Token)
 	claims, _ := user.Claims.(*entities.UserJWT)
 	var t struct {
@@ -62,7 +62,7 @@ func (ar *TaskAppRouter) doneTask(c echo.Context) error {
 	if err := c.Bind(&t); err != nil {
 		return c.JSON(http.StatusBadRequest, entities.ErrorRequest{})
 	}
-	err := ar.tManager.DoneTasks(t.TaskID, claims.UserID, claims.UserVersion)
+	err := ar.tManager.Finish(t.TaskID, claims.UserID, claims.UserVersion)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, entities.ErrorRequest{})
 	}

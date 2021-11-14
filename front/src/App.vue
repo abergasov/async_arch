@@ -5,7 +5,7 @@
     <Dashboard v-else :user="user" :tasks="tasks"
                v-on:assign_tasks="assignTasks"
                v-on:change_role="changeRole"
-               v-on:done_tasks="doneTask"
+               v-on:done_tasks="finishTask"
                v-on:create_task="createTask"/>
   </div>
 </template>
@@ -79,8 +79,8 @@ const loadTasks = () => {
   )
 }
 
-const doneTask = (payload) => {
-  askBackend("task/done", payload).then(
+const finishTask = (payload) => {
+  askBackend("task/finish", payload).then(
       data => {loadTasks();},
       err => console.error(err),
   )

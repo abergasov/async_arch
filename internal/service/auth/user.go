@@ -109,5 +109,5 @@ func (u *UserService) ChangeRole(publicID uuid.UUID, userVersion int, newRole st
 }
 
 func (u *UserService) GetUserInfo(publicID uuid.UUID, userVersion int) (*entities.UserAccount, error) {
-	return u.uRepo.GetUserByPublicID(publicID, userVersion)
+	return u.uRepo.GetByPublicID(publicID, userVersion)
 }

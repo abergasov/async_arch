@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	TaskCUDBrokerTopic = "taskCUD"
+	TaskCUDBrokerTopic = "taskStream"
 	TaskCreatedEvent   = "TaskCreated"
 	TaskAssignedEvent  = "TaskAssigned"
 	TaskFinishEvent    = "TaskFinished"
