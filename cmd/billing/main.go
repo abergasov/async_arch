@@ -6,6 +6,7 @@ import (
 	"async_arch/internal/config"
 	"async_arch/internal/entities"
 	"async_arch/internal/logger"
+	tRepo "async_arch/internal/repository/task"
 	"async_arch/internal/repository/user"
 	"async_arch/internal/routes/billing_routes"
 	"async_arch/internal/service"
@@ -29,10 +30,16 @@ func main() {
 	conn := database.InitDBConnect(&conf.ConfigDB)
 
 	userRepo := user.InitUserRepo(conn)
+	taskRepo := tRepo.InitTaskRepo(conn)
 
 	kfk := broker.InitKafkaConsumer(&conf.ConfigBroker, "billing", entities.UserCUDBrokerTopic)
 	registry := schema_registry.InitRegistry([]int{1})
-	service.InitUserReplicatorService(userRepo, registry, kfk, conf.JWTKey)
+	service.InitUserReplicatorService(userRepo, registry, kfk)
+
+	taskRegistry := schema_registry.InitRegistry([]int{2})
+	kfkTask := broker.InitKafkaConsumer(&conf.ConfigBroker, "billing", entities.TaskCUDBrokerTopic)
+	kfkTaskBI := broker.InitKafkaConsumer(&conf.ConfigBroker, "billing", entities.TaskBIBrokerTopic)
+	service.InitTaskReplicatorService(taskRepo, taskRegistry, kfkTask, kfkTaskBI)
 
 	router := billing_routes.InitBillingAppRouter(conf)
 	logger.Info("start auth app", zap.String("url", conf.AppHost+":"+conf.AppPort))

@@ -35,10 +35,13 @@ func main() {
 
 	kfk := broker.InitKafkaConsumer(&conf.ConfigBroker, "tasker", entities.UserCUDBrokerTopic)
 	registry := schema_registry.InitRegistry([]int{1})
-	service.InitUserReplicatorService(userRepo, registry, kfk, conf.JWTKey)
+	service.InitUserReplicatorService(userRepo, registry, kfk)
 
 	brokerKfk := broker.InitKafkaProducer(&conf.ConfigBroker, entities.TaskCUDBrokerTopic)
-	taskService := task.InitTaskManager(taskRepo, userRepo, brokerKfk)
+	registryTask := schema_registry.InitRegistry([]int{2})
+	brokerKfkBI := broker.InitKafkaProducer(&conf.ConfigBroker, entities.TaskBIBrokerTopic)
+	taskService := task.InitTaskManager(registryTask, taskRepo, userRepo, brokerKfk, brokerKfkBI)
+
 	router := task_routes.InitAuthAppRouter(conf, taskService)
 	logger.Info("start auth app", zap.String("url", conf.AppHost+":"+conf.AppPort))
 	if err := router.InitRoutes(conf.JWTKey).Start(":" + conf.AppPort); err != nil {

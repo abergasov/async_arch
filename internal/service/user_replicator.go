@@ -13,22 +13,20 @@ import (
 	"go.uber.org/zap"
 )
 
-type TaskUserRepo interface {
+type UserRepo interface {
 	CreateUser(account *user.UserAccountV1) error
 	UpdateUser(account *user.UserAccountV1) error
 }
 
 type UserReplicatorService struct {
-	uRepo    TaskUserRepo
-	jwtKey   []byte
+	uRepo    UserRepo
 	broker   *kafka.Reader
 	registry schema_registry.SchemaRegistry
 }
 
-func InitUserReplicatorService(uRepo TaskUserRepo, regio schema_registry.SchemaRegistry, kfk *kafka.Reader, jwtKey string) *UserReplicatorService {
+func InitUserReplicatorService(uRepo UserRepo, regio schema_registry.SchemaRegistry, kfk *kafka.Reader) *UserReplicatorService {
 	u := &UserReplicatorService{
 		uRepo:    uRepo,
-		jwtKey:   []byte(jwtKey),
 		broker:   kfk,
 		registry: regio,
 	}

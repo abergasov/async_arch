@@ -9,8 +9,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/abergasov/schema_registry"
 	"github.com/abergasov/schema_registry/pkg/grpc/task"
 	"github.com/abergasov/schema_registry/pkg/grpc/user"
+	"go.uber.org/zap"
 
 	"async_arch/internal/entities"
 	"async_arch/internal/logger"
@@ -38,16 +40,20 @@ type TaskRepo interface {
 var trackerRe = regexp.MustCompile(`(?m)(\[[^\]\[]*)+([^\]\[]*\])+`)
 
 type TaskManager struct {
-	tRepo  TaskRepo
-	uRepo  UserRepo
-	broker *kafka.Writer
+	tRepo        TaskRepo
+	uRepo        UserRepo
+	brokerStream *kafka.Writer
+	brokerBI     *kafka.Writer
+	regio        schema_registry.SchemaRegistry
 }
 
-func InitTaskManager(t TaskRepo, u UserRepo, kfk *kafka.Writer) *TaskManager {
+func InitTaskManager(regio schema_registry.SchemaRegistry, t TaskRepo, u UserRepo, kfk *kafka.Writer, kfkBI *kafka.Writer) *TaskManager {
 	return &TaskManager{
-		tRepo:  t,
-		uRepo:  u,
-		broker: kfk,
+		tRepo:        t,
+		uRepo:        u,
+		brokerStream: kfk,
+		brokerBI:     kfkBI,
+		regio:        regio,
 	}
 }
 
@@ -63,11 +69,20 @@ func (t *TaskManager) CreateTask(taskAuthor string, taskTitle, taskDesc string) 
 		logger.Error("error create task", err)
 		return nil, err
 	}
-	b, _ := json.Marshal(tsk)
-	if err = t.broker.WriteMessages(context.Background(), kafka.Message{
+	b, err := t.regio.EncodeTaskStreamEvent(entities.TaskCreatedEvent, 2, tsk)
+	if err != nil {
+		logger.Error("error send task", err)
+		return nil, err
+	}
+	logger.Info("task created, start streaming", zap.String("task", tsk.PublicID))
+	if err = t.brokerStream.WriteMessages(context.Background(), kafka.Message{
 		Key:   []byte(entities.TaskCreatedEvent),
 		Value: b,
 	}); err != nil {
+		logger.Error("error stream task", err)
+		return nil, err
+	}
+	if err = t.sendBIEvent(tsk.PublicID, entities.TaskCreatedBIEvent); err != nil {
 		logger.Error("error stream task", err)
 		return nil, err
 	}
@@ -118,14 +133,26 @@ func (t *TaskManager) AssignTasks(userPublicID string, userVersion int64) ([]*ta
 		return nil, err
 	}
 	messages := make([]kafka.Message, 0, len(tasks))
+	messagesBI := make([]kafka.Message, 0, len(tasks))
 	for i := range tasks {
 		b, _ := json.Marshal(tasks[i])
 		messages = append(messages, kafka.Message{
-			Key:   []byte(entities.TaskCreatedEvent),
+			Key:   []byte(entities.TaskAssignedEvent),
 			Value: b,
 		})
+		messagesBI = append(messagesBI, kafka.Message{
+			Key:   []byte(entities.TaskAssignedBIEvent),
+			Value: []byte(tasks[i].PublicID),
+		})
+
 	}
-	if err = t.broker.WriteMessages(context.Background(), messages...); err != nil {
+	logger.Info("tasks assigned, start streaming")
+	if err = t.brokerStream.WriteMessages(context.Background(), messages...); err != nil {
+		logger.Error("error stream event", err)
+		return nil, err
+	}
+
+	if err = t.brokerBI.WriteMessages(context.Background(), messagesBI...); err != nil {
 		logger.Error("error stream event", err)
 		return nil, err
 	}
@@ -166,9 +193,21 @@ func (t *TaskManager) Finish(taskPublicID, userPublicID string, userVersion int6
 		return err
 	}
 	b, _ := json.Marshal(targetTask)
-	if err = t.broker.WriteMessages(context.Background(), kafka.Message{
+	logger.Info("tasks finished, start streaming", zap.String("task", targetTask.PublicID))
+	if err = t.brokerStream.WriteMessages(context.Background(), kafka.Message{
 		Key:   []byte(entities.TaskFinishEvent),
 		Value: b,
+	}); err != nil {
+		logger.Error("error stream event", err)
+		return err
+	}
+	return t.sendBIEvent(targetTask.PublicID, entities.TaskFinishBIEvent)
+}
+
+func (t *TaskManager) sendBIEvent(publicID, event string) error {
+	if err := t.brokerBI.WriteMessages(context.Background(), kafka.Message{
+		Key:   []byte(event),
+		Value: []byte(publicID),
 	}); err != nil {
 		logger.Error("error stream event", err)
 		return err

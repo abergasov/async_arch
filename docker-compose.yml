@@ -3,17 +3,15 @@ version: '3'
 services:
 
   zookeeper:
-    image: confluentinc/cp-zookeeper:5.4.1
-    hostname: zookeeper
-    container_name: zookeeper
-    ports:
-      - "2181:2181"
+    image: confluentinc/cp-zookeeper:latest
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - 2181:2181
 
   broker:
-    image: confluentinc/cp-server:5.4.1
+    image: confluentinc/cp-server:latest
     hostname: broker
     container_name: broker
     depends_on:

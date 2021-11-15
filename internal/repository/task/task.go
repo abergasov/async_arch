@@ -182,3 +182,63 @@ func (t *TaskRepo) FinishTask(taskPublicID string) error {
 	)
 	return err
 }
+
+func (t *TaskRepo) CreateTaskV1(tsk *task.TaskV1) error {
+	_, err := t.conn.Client().NamedExec("INSERT INTO tasks (public_id, author, title, description, assign_cost, done_cost, status, created_at) VALUES (:public_id, :author, :title, :description, :assign_cost, :done_cost, :status, :created_at)", map[string]interface{}{
+		"public_id":   tsk.PublicID,
+		"author":      tsk.Author,
+		"title":       tsk.Title,
+		"description": tsk.Description,
+		"assign_cost": tsk.AssignCost,
+		"done_cost":   tsk.DoneCost,
+		"status":      tsk.Status,
+		"created_at":  tsk.CreatedAt,
+	})
+	return err
+}
+
+func (t *TaskRepo) CreateTaskV2(tsk *task.TaskV2) error {
+	_, err := t.conn.Client().NamedExec("INSERT INTO tasks (public_id, author, title, description, assign_cost, done_cost, status, created_at, tracker_id, public_status) VALUES (:public_id, :author, :title, :description, :assign_cost, :done_cost, :status, :created_at, :tracker_id, :public_status)", map[string]interface{}{
+		"public_id":     tsk.PublicID,
+		"author":        tsk.Author,
+		"title":         tsk.Title,
+		"description":   tsk.Description,
+		"assign_cost":   tsk.AssignCost,
+		"done_cost":     tsk.DoneCost,
+		"status":        tsk.Status,
+		"created_at":    tsk.CreatedAt,
+		"tracker_id":    tsk.JiraID,
+		"public_status": tsk.PublicStatus,
+	})
+	return err
+}
+
+func (t *TaskRepo) UpdateTaskV1(tsk *task.TaskV1) error {
+	_, err := t.conn.Client().NamedExec("UPDATE tasks SET author=:author, title=:title, description=:description, assign_cost=:assign_cost, done_cost=:done_cost, status=:status, created_at=:created_at WHERE public_id=:public_id", map[string]interface{}{
+		"public_id":   tsk.PublicID,
+		"author":      tsk.Author,
+		"title":       tsk.Title,
+		"description": tsk.Description,
+		"assign_cost": tsk.AssignCost,
+		"done_cost":   tsk.DoneCost,
+		"status":      tsk.Status,
+		"created_at":  tsk.CreatedAt,
+	})
+	return err
+}
+
+func (t *TaskRepo) UpdateTaskV2(tsk *task.TaskV2) error {
+	_, err := t.conn.Client().NamedExec("UPDATE tasks SET author=:author, title=:title, description=:description, assign_cost=:assign_cost, done_cost=:done_cost, status=:status, created_at=:created_at, tracker_id:tracker_id, public_status:public_status WHERE public_id=:public_id", map[string]interface{}{
+		"public_id":     tsk.PublicID,
+		"author":        tsk.Author,
+		"title":         tsk.Title,
+		"description":   tsk.Description,
+		"assign_cost":   tsk.AssignCost,
+		"done_cost":     tsk.DoneCost,
+		"status":        tsk.Status,
+		"created_at":    tsk.CreatedAt,
+		"tracker_id":    tsk.JiraID,
+		"public_status": tsk.PublicStatus,
+	})
+	return err
+}

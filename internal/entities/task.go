@@ -1,10 +1,15 @@
 package entities
 
 const (
-	TaskCUDBrokerTopic       = "taskStream"
+	TaskCUDBrokerTopic = "taskStream"
+	TaskBIBrokerTopic  = "taskBIStream"
+
 	TaskCreatedEvent         = "TaskCreated"
+	TaskCreatedBIEvent       = "TaskCreated"
 	TaskAssignedEvent        = "TaskAssigned"
+	TaskAssignedBIEvent      = "TaskAssigned"
 	TaskFinishEvent          = "TaskFinished"
+	TaskFinishBIEvent        = "TaskFinished"
 	NewTaskStatus            = "new"
 	AssignedTaskStatus       = "assigned"
 	PublicAssignedTaskStatus = "птичка в клетке"
