@@ -3,7 +3,7 @@ stop:
 	@echo "-- stop containers";
 	docker container ls -q --filter name=arch* ; true
 	@echo "-- drop containers"
-	docker rm -f -v $(shell docker container ls -q --filter name=arch*) ; true
+	docker rm -f -v $(shell docker container ls -a -q --filter name=arch) ; true
 
 dev_up: stop
 	@echo "RUN dev docker-compose.yml "
