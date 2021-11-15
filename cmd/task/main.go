@@ -19,9 +19,10 @@ import (
 	"go.uber.org/zap"
 )
 
+const appPrefix = "task"
+
 var (
-	appPrefix = "task"
-	confFile  = flag.String("config", "configs/task.yml", "Config file path")
+	confFile = flag.String("config", "configs/task.yml", "Config file path")
 )
 
 func main() {
@@ -33,9 +34,11 @@ func main() {
 	userRepo := user.InitUserRepo(conn)
 	taskRepo := tRepo.InitTaskRepo(conn)
 
-	kfk := broker.InitKafkaConsumer(&conf.ConfigBroker, "tasker", entities.UserCUDBrokerTopic)
-	registry := schema_registry.InitRegistry([]int{1})
-	service.InitUserReplicatorService(userRepo, registry, kfk)
+	service.InitUserReplicatorService(
+		userRepo,
+		schema_registry.InitRegistry([]int{1}),
+		broker.InitKafkaConsumer(&conf.ConfigBroker, appPrefix, entities.UserCUDBrokerTopic),
+	)
 
 	brokerKfk := broker.InitKafkaProducer(&conf.ConfigBroker, entities.TaskCUDBrokerTopic)
 	registryTask := schema_registry.InitRegistry([]int{2})

@@ -31,9 +31,10 @@ func main() {
 
 	userRepo := user.InitUserRepo(conn)
 	brokerKfk := broker.InitKafkaProducer(&conf.ConfigBroker, entities.UserCUDBrokerTopic)
+	brokerKfkBI := broker.InitKafkaProducer(&conf.ConfigBroker, entities.UserBIBrokerTopic)
 
 	registry := schema_registry.InitRegistry([]int{1})
-	userService := auth.InitUserService(userRepo, registry, brokerKfk, conf.JWTKey)
+	userService := auth.InitUserService(userRepo, registry, brokerKfk, brokerKfkBI, conf.JWTKey)
 
 	exc := exchanger.InitExchanger(conn) // exchange uuid to jwt
 	router := auth_routes.InitAuthAppRouter(conf, userService, exc)

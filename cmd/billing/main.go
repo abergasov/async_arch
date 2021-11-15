@@ -6,10 +6,12 @@ import (
 	"async_arch/internal/config"
 	"async_arch/internal/entities"
 	"async_arch/internal/logger"
+	"async_arch/internal/repository/account"
 	tRepo "async_arch/internal/repository/task"
 	"async_arch/internal/repository/user"
 	"async_arch/internal/routes/billing_routes"
 	"async_arch/internal/service"
+	"async_arch/internal/service/billing"
 	"async_arch/internal/storage/broker"
 	"async_arch/internal/storage/database"
 
@@ -18,9 +20,10 @@ import (
 	"github.com/abergasov/schema_registry"
 )
 
+const appPrefix = "billing"
+
 var (
-	appPrefix = "task"
-	confFile  = flag.String("config", "configs/billing.yml", "Config file path")
+	confFile = flag.String("config", "configs/billing.yml", "Config file path")
 )
 
 func main() {
@@ -29,17 +32,23 @@ func main() {
 	conf := config.InitConf(*confFile)
 	conn := database.InitDBConnect(&conf.ConfigDB)
 
-	userRepo := user.InitUserRepo(conn)
-	taskRepo := tRepo.InitTaskRepo(conn)
+	service.InitUserReplicatorService(
+		user.InitUserRepo(conn),
+		schema_registry.InitRegistry([]int{1}),
+		broker.InitKafkaConsumer(&conf.ConfigBroker, appPrefix, entities.UserCUDBrokerTopic),
+	)
 
-	kfk := broker.InitKafkaConsumer(&conf.ConfigBroker, "billing", entities.UserCUDBrokerTopic)
-	registry := schema_registry.InitRegistry([]int{1})
-	service.InitUserReplicatorService(userRepo, registry, kfk)
+	service.InitTaskReplicatorService(
+		tRepo.InitTaskRepo(conn),
+		schema_registry.InitRegistry([]int{2}),
+		broker.InitKafkaConsumer(&conf.ConfigBroker, appPrefix, entities.TaskCUDBrokerTopic),
+		broker.InitKafkaConsumer(&conf.ConfigBroker, appPrefix, entities.TaskBIBrokerTopic),
+	)
 
-	taskRegistry := schema_registry.InitRegistry([]int{2})
-	kfkTask := broker.InitKafkaConsumer(&conf.ConfigBroker, "billing", entities.TaskCUDBrokerTopic)
-	kfkTaskBI := broker.InitKafkaConsumer(&conf.ConfigBroker, "billing", entities.TaskBIBrokerTopic)
-	service.InitTaskReplicatorService(taskRepo, taskRegistry, kfkTask, kfkTaskBI)
+	billing.InitAccounter(
+		account.InitAccountRepo(conn),
+		broker.InitKafkaConsumer(&conf.ConfigBroker, appPrefix, entities.UserBIBrokerTopic),
+	)
 
 	router := billing_routes.InitBillingAppRouter(conf)
 	logger.Info("start auth app", zap.String("url", conf.AppHost+":"+conf.AppPort))

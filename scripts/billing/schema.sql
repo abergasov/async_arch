@@ -51,3 +51,15 @@ create index tasks_public_id_index
 
 create index tasks_created_at_index
     on tasks (created_at);
+
+create table account
+(
+    acc_id serial
+        constraint account_pk
+            primary key,
+    public_id uuid,
+    amount int default 0
+);
+
+create index account_public_id_index
+    on account (public_id);

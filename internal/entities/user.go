@@ -8,6 +8,10 @@ const (
 	UserCUDBrokerTopic = "userStream"
 	UserCreatedEvent   = "UserCreated"
 	UserUpdatedEvent   = "UserUpdated"
+
+	UserBIBrokerTopic  = "userBIStream"
+	UserBICreatedEvent = "userBICreated"
+	UserBIUpdatedEvent = "UserBIUpdated"
 )
 
 //type UserAccount1 struct {
@@ -19,6 +23,10 @@ const (
 //	Version  int       `json:"version" db:"user_version"`
 //	Active   bool      `json:"active" db:"active"`
 //}
+
+type UserBIEvent struct {
+	PublicID string
+}
 
 type UserJWT struct {
 	UserID      string `json:"id"`

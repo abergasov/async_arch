@@ -26,11 +26,18 @@ type UserService struct {
 	uRepo    userRepo.UserRepo
 	jwtKey   []byte
 	broker   *kafka.Writer
+	brokerBI *kafka.Writer
 	registry schema_registry.SchemaRegistry
 }
 
-func InitUserService(uRepo userRepo.UserRepo, regio schema_registry.SchemaRegistry, kfk *kafka.Writer, jwtKey string) *UserService {
-	return &UserService{uRepo: uRepo, jwtKey: []byte(jwtKey), broker: kfk, registry: regio}
+func InitUserService(
+	uRepo userRepo.UserRepo,
+	regio schema_registry.SchemaRegistry,
+	kfk *kafka.Writer,
+	kfkBI *kafka.Writer,
+	jwtKey string,
+) *UserService {
+	return &UserService{uRepo: uRepo, jwtKey: []byte(jwtKey), broker: kfk, brokerBI: kfkBI, registry: regio}
 }
 
 func (u *UserService) Login(googleUser *entities.GoogleUser) (string, error) {
@@ -57,6 +64,16 @@ func (u *UserService) Login(googleUser *entities.GoogleUser) (string, error) {
 		}
 		if err = u.broker.WriteMessages(context.Background(), kafka.Message{
 			Key:   []byte(entities.UserCreatedEvent),
+			Value: b,
+		}); err != nil {
+			logger.Error("error stream event", err)
+			return "", err
+		}
+		b, _ = json.Marshal(entities.UserBIEvent{
+			PublicID: usr.PublicID,
+		})
+		if err = u.brokerBI.WriteMessages(context.Background(), kafka.Message{
+			Key:   []byte(entities.UserBICreatedEvent),
 			Value: b,
 		}); err != nil {
 			logger.Error("error stream event", err)
