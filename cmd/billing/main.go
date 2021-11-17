@@ -48,6 +48,7 @@ func main() {
 	billing.InitAccounter(
 		account.InitAccountRepo(conn),
 		broker.InitKafkaConsumer(&conf.ConfigBroker, appPrefix, entities.UserBIBrokerTopic),
+		broker.InitKafkaConsumer(&conf.ConfigBroker, appPrefix, entities.TaskBIBrokerTopic),
 	)
 
 	router := billing_routes.InitBillingAppRouter(conf)

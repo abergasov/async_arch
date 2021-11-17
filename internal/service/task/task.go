@@ -140,9 +140,13 @@ func (t *TaskManager) AssignTasks(userPublicID string, userVersion int64) ([]*ta
 			Key:   []byte(entities.TaskAssignedEvent),
 			Value: b,
 		})
+		bi, _ := json.Marshal(entities.TaskAssignContainer{
+			TaskPublicID: tasks[i].PublicID,
+			UserPublicID: tasks[i].AssignedTo,
+		})
 		messagesBI = append(messagesBI, kafka.Message{
 			Key:   []byte(entities.TaskAssignedBIEvent),
-			Value: []byte(tasks[i].PublicID),
+			Value: bi,
 		})
 
 	}

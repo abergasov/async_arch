@@ -63,3 +63,27 @@ create table account
 
 create index account_public_id_index
     on account (public_id);
+
+
+create table account_transactions
+(
+    at_id            serial
+        constraint account_transactions_pk
+            primary key,
+    user_id          uuid,
+    amount           integer,
+    transaction_date timestamp,
+    task_id          uuid
+);
+
+alter table account_transactions
+    owner to "user";
+
+create index account_transactions_transaction_date_index
+    on account_transactions (transaction_date);
+
+create index account_transactions_user_id_index
+    on account_transactions (user_id);
+
+create index account_transactions_task_id_index
+    on account_transactions (task_id);
